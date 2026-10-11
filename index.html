@@ -1151,7 +1151,11 @@ function rankSearch(apiItems, ownItems, q, en) {
   const qs = tokens(q), es = tokens(en);
   const own = ownItems.filter(f => f.source !== 'supp' && qs.length && (qs.every(t => normTxt(f.name + ' ' + (f.nameEn || '')).includes(t))
       || (f.nameEn && es.length && es.every(t => tokens(f.nameEn).includes(t)))))
-    .map(f => ({ ...f, mine: true }));
+    .map(f => {
+      /* Gibt es denselben Eintrag frisch aus der Datenbank, dessen aktuelle Werte nehmen (gespeicherte können veraltet sein) */
+      const fresh = apiItems.find(a => foodKey(a) === foodKey(f));
+      return fresh ? { ...fresh, mine: true } : { ...f, mine: true };
+    });
   const ownKeys = new Set(own.map(foodKey));
   const seen = new Set();
   const scored = apiItems.filter(it => !ownKeys.has(foodKey(it)))
@@ -1316,7 +1320,7 @@ const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_gro
    Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
    Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
    und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
-const APP_VERSION = '4.8';
+const APP_VERSION = '4.9';
 const OFF_FIELDS_BASIC = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
 const offCache = new Map();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
