@@ -413,7 +413,6 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 .ndrow span:last-child{text-align:right;white-space:nowrap}
 .resact{display:flex;align-items:center;gap:2px;flex:none}
 .star[aria-pressed="true"]{color:var(--nova3)}
-#reader{width:100%;max-width:360px;margin:0 auto 10px;border-radius:14px;overflow:hidden}
 .pending{border-top:1px solid var(--line);padding:12px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface)}
 .pending{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"t n n" "t p p" "q q b";column-gap:12px;row-gap:6px}
 .pending[hidden]{display:none!important}
@@ -481,9 +480,7 @@ details.fd summary{cursor:pointer;font-weight:700}
       Die databaseURL steht oben auf der Seite "Realtime Database", zum Beispiel
       https://DEIN_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app
       Solange hier "DEIN" steht, läuft die App im Testmodus (nur Browser).
-   2) USDA: kostenlosen Schlüssel holen unter https://fdc.nal.usda.gov/api-key-signup
-      (DEMO_KEY funktioniert, hat aber ein sehr kleines Tageslimit).
-   3) Regeln der Realtime Database (damit jeder nur seine eigenen Daten sieht):
+   2) Regeln der Realtime Database (damit jeder nur seine eigenen Daten sieht):
       {
         "rules": {
           "users": {
@@ -502,9 +499,7 @@ const FIREBASE_CONFIG = {
   projectId: "health-45f80",
   appId: "1:676711657322:web:181b9006c52566d4ad3f13"
 };
-const USDA_API_KEY = "lnoTG9TgOaGEaUcXezbwodpCfUc5OtExYlTLFbTs";
 const FIREBASE_VERSION = "10.14.1";
-const SCAN_LIB = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
 const FIREBASE_MISSING = ['apiKey', 'databaseURL', 'projectId', 'appId'].filter(k => !FIREBASE_CONFIG[k] || String(FIREBASE_CONFIG[k]).startsWith('DEIN'));
 const FIREBASE_READY = FIREBASE_MISSING.length === 0;
 
@@ -565,18 +560,18 @@ const NUTRIENTS = [
   { key: 'ala', label: 'Omega-3 ALA (pflanzlich)', unit: 'g', group: 'Fette und mehr', dec: 1, ref: { m: 1.4, w: 1.1 } },
   { key: 'epadha', label: 'Omega-3 EPA + DHA (Fisch)', unit: 'mg', group: 'Fette und mehr', dec: 0, ref: { m: 250, w: 250 } },
   { key: 'caffeine', label: 'Koffein', unit: 'mg', group: 'Fette und mehr', dec: 0, ref: { m: 400, w: 400 }, type: 'max' },
-  { key: 'vitA', label: 'Vitamin A', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 1000, w: 800 } },
+  { key: 'vitA', label: 'Vitamin A', unit: 'µg RAE', group: 'Vitamine', dec: 0, ref: { m: 900, w: 700 } },
   { key: 'vitC', label: 'Vitamin C', unit: 'mg', group: 'Vitamine', dec: 0, ref: { m: 110, w: 95 } },
   { key: 'vitD', label: 'Vitamin D', unit: 'µg', group: 'Vitamine', dec: 1, ref: { m: 20, w: 20 } },
-  { key: 'vitE', label: 'Vitamin E', unit: 'mg', group: 'Vitamine', dec: 1, ref: { m: 15, w: 12 } },
+  { key: 'vitE', label: 'Vitamin E', unit: 'mg α-Toc', group: 'Vitamine', dec: 1, ref: { m: 15, w: 12 } },
   { key: 'vitK', label: 'Vitamin K', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 70, w: 60 } },
   { key: 'b1', label: 'Vitamin B1', unit: 'mg', group: 'Vitamine', dec: 2, ref: { m: 1.2, w: 1.0 } },
   { key: 'b2', label: 'Vitamin B2', unit: 'mg', group: 'Vitamine', dec: 2, ref: { m: 1.4, w: 1.1 } },
-  { key: 'b3', label: 'Niacin (B3)', unit: 'mg', group: 'Vitamine', dec: 1, ref: { m: 16, w: 13 } },
+  { key: 'b3', label: 'Niacin (B3)', unit: 'mg NE', group: 'Vitamine', dec: 1, ref: { m: 16, w: 13 } },
   { key: 'b5', label: 'Pantothensäure (B5)', unit: 'mg', group: 'Vitamine', dec: 1, ref: { m: 6, w: 6 } },
   { key: 'b6', label: 'Vitamin B6', unit: 'mg', group: 'Vitamine', dec: 2, ref: { m: 1.6, w: 1.4 } },
   { key: 'b7', label: 'Biotin (B7)', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 40, w: 40 } },
-  { key: 'b9', label: 'Folat (B9)', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 300, w: 300 } },
+  { key: 'b9', label: 'Folat (B9)', unit: 'µg DFE', group: 'Vitamine', dec: 0, ref: { m: 300, w: 300 } },
   { key: 'b12', label: 'Vitamin B12', unit: 'µg', group: 'Vitamine', dec: 1, ref: { m: 4, w: 4 } },
   { key: 'ca', label: 'Calcium', unit: 'mg', group: 'Mineralstoffe', dec: 0, ref: { m: 1000, w: 1000 } },
   { key: 'fe', label: 'Eisen', unit: 'mg', group: 'Mineralstoffe', dec: 1, ref: { m: 10, w: 15 } },
@@ -603,116 +598,6 @@ function computeTargets(p) {
     else if (n.ref) out[n.key] = { value: n.ref[sex], type: n.type || 'min' };
   }
   return addSatfatTarget(addOmegaTarget(out, p), p);
-}
-
-/* Open Food Facts liefert Vitamine/Mineralstoffe in Gramm pro 100 g -> in mg bzw. µg umrechnen */
-const OFF_MAP = {
-  kcal: ['energy-kcal', 1], protein: ['proteins', 1], fat: ['fat', 1], carbs: ['carbohydrates', 1],
-  sugar: ['sugars', 1], fiber: ['fiber', 1],
-  satfat: ['saturated-fat', 1], chol: ['cholesterol', 1e3], omega3: ['omega-3-fat', 1], caffeine: ['caffeine', 1e3],
-  vitA: ['vitamin-a', 1e6], vitC: ['vitamin-c', 1e3], vitD: ['vitamin-d', 1e6], vitE: ['vitamin-e', 1e3],
-  vitK: ['vitamin-k', 1e6], b1: ['vitamin-b1', 1e3], b2: ['vitamin-b2', 1e3], b3: ['vitamin-pp', 1e3],
-  b5: ['pantothenic-acid', 1e3], b6: ['vitamin-b6', 1e3], b7: ['biotin', 1e6], b9: ['vitamin-b9', 1e6],
-  b12: ['vitamin-b12', 1e6],
-  ca: ['calcium', 1e3], fe: ['iron', 1e3], mg: ['magnesium', 1e3], zn: ['zinc', 1e3],
-  k: ['potassium', 1e3], se: ['selenium', 1e6], i: ['iodine', 1e6],
-  p: ['phosphorus', 1e3], cu: ['copper', 1e3], mn: ['manganese', 1e3]
-};
-
-function fromOFF(p) {
-  if (!p) return null;
-  const nu = p.nutriments || {};
-  const per100 = {};
-  for (const [k, [key, mult]] of Object.entries(OFF_MAP)) {
-    const v = num(nu[key + '_100g']);
-    per100[k] = v === null ? null : v * mult;
-  }
-  per100.ala = num(nu['alpha-linolenic-acid_100g']);
-  { const epa = num(nu['eicosapentaenoic-acid_100g']), dha = num(nu['docosahexaenoic-acid_100g']);
-    per100.epadha = (epa === null && dha === null) ? null : ((epa || 0) + (dha || 0)) * 1000; }
-  if (per100.kcal === null) { const kj = num(nu['energy_100g']); if (kj !== null) per100.kcal = kj / 4.184; }
-  const salt = num(nu['salt_100g']);
-  if (salt !== null) per100.salt = salt;
-  else { const na = num(nu['sodium_100g']); per100.salt = na === null ? null : na * 2.5; }
-  const name = String(p.product_name_de || p.product_name || '').trim();
-  if (!name) return null;
-  if (per100.kcal === null && per100.protein === null) return null;
-  const nova = num(p.nova_group);
-  const grade = String(p.nutriscore_grade || '').toLowerCase();
-  return {
-    source: 'off', code: String(p.code || ''), name,
-    brand: String(p.brands || '').split(',')[0].trim(),
-    per100, nova: nova >= 1 && nova <= 4 ? nova : null,
-    nutri: ['a', 'b', 'c', 'd', 'e'].includes(grade) ? grade : null,
-    img: safeImg(p.image_front_small_url || p.image_small_url || p.image_front_url)
-  };
-}
-
-const USDA_MAP = {
-  protein: ['203'], fat: ['204'], carbs: ['205'], sugar: ['269', '269.3'], fiber: ['291'],
-  satfat: ['606'], chol: ['601'], caffeine: ['262'],
-  vitA: ['320'], vitC: ['401'], vitD: ['328'], vitE: ['323'], vitK: ['430'],
-  b1: ['404'], b2: ['405'], b3: ['406'], b5: ['410'], b6: ['415'], b7: ['416'], b9: ['417', '435'], b12: ['418'],
-  ca: ['301'], fe: ['303'], mg: ['304'], zn: ['309'], k: ['306'], se: ['317'], i: ['314'],
-  p: ['305'], cu: ['312'], mn: ['315']
-};
-const USDA_OMEGA3 = ['619', '629', '621', '631'];   // ALA, EPA, DHA, DPA (g pro 100 g)
-
-function fromUSDA(f) {
-  if (!f || !f.description) return null;
-  const byNo = {};
-  for (const n of (f.foodNutrients || [])) {
-    const no = String(n.nutrientNumber ?? '');
-    const v = num(n.value);
-    if (no && v !== null) byNo[no] = { v, unit: String(n.unitName || '').toUpperCase() };
-  }
-  const per100 = {};
-  for (const [k, nos] of Object.entries(USDA_MAP)) {
-    const hit = nos.map(no => byNo[no]).find(Boolean);
-    per100[k] = hit ? hit.v : null;
-  }
-  const o3 = USDA_OMEGA3.map(no => byNo[no]).filter(Boolean);
-  per100.omega3 = o3.length ? o3.reduce((a, e) => a + e.v, 0) : null;
-  { const pick = nos => { const h = nos.map(no => byNo[no]).find(Boolean); return h ? h.v : null; };
-    per100.ala = pick(['851', '619']);
-    const epa = pick(['629']), dha = pick(['621']);
-    per100.epadha = (epa === null && dha === null) ? null : ((epa || 0) + (dha || 0)) * 1000; }
-  const kc = ['208', '957', '958'].map(no => byNo[no]).find(e => e && e.unit === 'KCAL');
-  per100.kcal = kc ? kc.v : null;
-  per100.salt = byNo['307'] ? byNo['307'].v * 2.5 / 1000 : null;
-  if (per100.kcal === null && per100.protein === null) return null;
-  return {
-    source: 'usda', code: String(f.fdcId || ''), name: String(f.description).trim(),
-    brand: '', per100, nova: null, nutri: null
-  };
-}
-
-const DE_EN = {
-  'hähnchen': 'chicken', 'hühnchen': 'chicken', 'huhn': 'chicken', 'hähnchenbrust': 'chicken breast',
-  'hühnerbrust': 'chicken breast', 'pute': 'turkey', 'putenbrust': 'turkey breast', 'rind': 'beef',
-  'rindfleisch': 'beef', 'hackfleisch': 'ground beef', 'schwein': 'pork', 'schweinefleisch': 'pork',
-  'schinken': 'ham', 'lachs': 'salmon', 'thunfisch': 'tuna', 'forelle': 'trout', 'garnelen': 'shrimp',
-  'ei': 'egg', 'eier': 'egg', 'milch': 'milk', 'joghurt': 'yogurt', 'quark': 'cottage cheese',
-  'käse': 'cheese', 'mozzarella': 'mozzarella', 'feta': 'feta', 'butter': 'butter', 'sahne': 'cream',
-  'reis': 'rice', 'vollkornreis': 'brown rice', 'nudeln': 'pasta', 'haferflocken': 'oats',
-  'hafer': 'oats', 'brot': 'bread', 'vollkornbrot': 'whole wheat bread', 'brötchen': 'roll',
-  'mehl': 'flour', 'kartoffel': 'potato', 'kartoffeln': 'potato', 'süßkartoffel': 'sweet potato',
-  'tomate': 'tomatoes', 'tomaten': 'tomatoes', 'gurke': 'cucumber', 'paprika': 'sweet peppers',
-  'karotte': 'carrots', 'karotten': 'carrots', 'möhre': 'carrots', 'möhren': 'carrots',
-  'brokkoli': 'broccoli', 'spinat': 'spinach', 'salat': 'lettuce', 'zwiebel': 'onions',
-  'zwiebeln': 'onions', 'knoblauch': 'garlic', 'pilze': 'mushrooms', 'champignons': 'mushrooms',
-  'zucchini': 'zucchini', 'blumenkohl': 'cauliflower', 'kürbis': 'pumpkin', 'avocado': 'avocados',
-  'apfel': 'apples', 'banane': 'bananas', 'orange': 'oranges', 'erdbeeren': 'strawberries',
-  'blaubeeren': 'blueberries', 'himbeeren': 'raspberries', 'trauben': 'grapes', 'zitrone': 'lemon',
-  'birne': 'pears', 'mandeln': 'almonds', 'walnüsse': 'walnuts', 'erdnüsse': 'peanuts',
-  'erdnussbutter': 'peanut butter', 'cashews': 'cashew nuts', 'linsen': 'lentils',
-  'kichererbsen': 'chickpeas', 'bohnen': 'beans', 'erbsen': 'peas', 'tofu': 'tofu', 'mais': 'corn',
-  'quinoa': 'quinoa', 'couscous': 'couscous', 'olivenöl': 'olive oil', 'honig': 'honey',
-  'zucker': 'sugar', 'schokolade': 'chocolate', 'roh': 'raw', 'gekocht': 'cooked', 'gebraten': 'fried',
-  'kaffee': 'coffee', 'tee': 'tea', 'wasser': 'water', 'bier': 'beer', 'wein': 'wine'
-};
-function translateQuery(q) {
-  return String(q).toLowerCase().split(/\s+/).filter(Boolean).map(w => DE_EN[w] ?? w).join(' ');
 }
 
 /* Menge eines Eintrags: Lebensmittel in Gramm (Werte pro 100 g), Ergänzungen in Stück (Werte pro Stück) */
@@ -821,6 +706,8 @@ function normLib(raw) {
   const l = emptyLib();
   if (!raw || typeof raw !== 'object') return l;
   for (const k of ['custom', 'favorites', 'recent', 'supplements']) l[k] = toArr(raw[k]).filter(x => x && x.name).map(normFoodRef);
+  /* Die Suche (Open Food Facts, USDA) gibt es nicht mehr: gespeicherte Treffer daraus fliegen aus Favoriten und Zuletzt gegessen */
+  for (const k of ['favorites', 'recent']) l[k] = l[k].filter(x => x.source !== 'off' && x.source !== 'usda');
   l.templates = toArr(raw.templates).filter(x => x && x.name).map(normTemplate);
   l.shopChecked = raw.shopChecked && typeof raw.shopChecked === 'object' ? raw.shopChecked : {};
   return l;
@@ -1114,133 +1001,6 @@ function copyMealItems(items, meal) {
   return items.filter(it => it.meal === meal).map(it => makeItem(toFoodRef(it), it.kind === 'supp' ? it.qty : it.grams, it.meal, it.time));
 }
 
-/* Deutsche Namen für Einträge aus der USDA-Datenbank (Wort für Wort, Unbekanntes bleibt englisch) */
-const EN_DE_PHRASES = {
-  'broilers or fryers': 'Masthähnchen', 'meat only': 'nur Fleisch', 'meat and skin': 'mit Haut', 'skin only': 'nur Haut',
-  'mature seeds': 'reife Samen', 'all varieties': 'alle Sorten', 'without salt': 'ohne Salz', 'with salt': 'mit Salz',
-  'drained solids': 'abgetropft', 'long-grain': 'Langkorn', 'short-grain': 'Rundkorn', 'medium-grain': 'Mittelkorn',
-  'sweet peppers': 'Paprika', 'bell peppers': 'Paprika', 'peanut butter': 'Erdnussbutter', 'olive oil': 'Olivenöl',
-  'brown rice': 'Naturreis', 'white rice': 'weißer Reis', 'whole milk': 'Vollmilch', 'skim milk': 'Magermilch',
-  'cottage cheese': 'Hüttenkäse', 'cream cheese': 'Frischkäse', 'ground beef': 'Rinderhack', 'sweet potato': 'Süßkartoffel',
-  'chia seeds': 'Chiasamen', 'flax seeds': 'Leinsamen', 'sunflower seeds': 'Sonnenblumenkerne', 'pumpkin seeds': 'Kürbiskerne',
-  'cashew nuts': 'Cashewkerne', 'green beans': 'grüne Bohnen', 'kidney beans': 'Kidneybohnen', 'black beans': 'schwarze Bohnen'
-};
-const EN_DE = {
-  chicken: 'Hähnchen', beef: 'Rind', pork: 'Schwein', turkey: 'Pute', lamb: 'Lamm', veal: 'Kalb', salmon: 'Lachs', tuna: 'Thunfisch',
-  trout: 'Forelle', cod: 'Kabeljau', shrimp: 'Garnelen', fish: 'Fisch', egg: 'Ei', eggs: 'Eier', milk: 'Milch', yogurt: 'Joghurt',
-  cheese: 'Käse', butter: 'Butter', cream: 'Sahne', rice: 'Reis', oats: 'Haferflocken', oat: 'Hafer', bread: 'Brot', pasta: 'Nudeln',
-  spaghetti: 'Spaghetti', flour: 'Mehl', potatoes: 'Kartoffeln', potato: 'Kartoffel', tomatoes: 'Tomaten', tomato: 'Tomate',
-  broccoli: 'Brokkoli', spinach: 'Spinat', carrots: 'Karotten', carrot: 'Karotte', onions: 'Zwiebeln', onion: 'Zwiebel',
-  garlic: 'Knoblauch', mushrooms: 'Pilze', cucumber: 'Gurke', lettuce: 'Salat', kale: 'Grünkohl', cabbage: 'Kohl',
-  cauliflower: 'Blumenkohl', zucchini: 'Zucchini', squash: 'Kürbis', pumpkin: 'Kürbis', corn: 'Mais', peas: 'Erbsen',
-  beans: 'Bohnen', lentils: 'Linsen', chickpeas: 'Kichererbsen', tofu: 'Tofu', apples: 'Äpfel', apple: 'Apfel',
-  bananas: 'Bananen', banana: 'Banane', oranges: 'Orangen', orange: 'Orange', strawberries: 'Erdbeeren', blueberries: 'Heidelbeeren',
-  raspberries: 'Himbeeren', grapes: 'Weintrauben', pears: 'Birnen', lemon: 'Zitrone', lemons: 'Zitronen', kiwifruit: 'Kiwi',
-  avocados: 'Avocado', avocado: 'Avocado', mango: 'Mango', pineapple: 'Ananas', almonds: 'Mandeln', walnuts: 'Walnüsse',
-  peanuts: 'Erdnüsse', nuts: 'Nüsse', seeds: 'Samen', quinoa: 'Quinoa', couscous: 'Couscous', honey: 'Honig', sugar: 'Zucker',
-  oil: 'Öl', water: 'Wasser', coffee: 'Kaffee', tea: 'Tee', juice: 'Saft', chocolate: 'Schokolade',
-  breast: 'Brust', thigh: 'Schenkel', drumstick: 'Unterschenkel', wing: 'Flügel', leg: 'Keule', fillet: 'Filet', loin: 'Lende',
-  steak: 'Steak', ground: 'gehackt', raw: 'roh', cooked: 'gekocht', boiled: 'gekocht', roasted: 'gebraten', baked: 'gebacken',
-  fried: 'frittiert', grilled: 'gegrillt', broiled: 'gegrillt', steamed: 'gedämpft', stewed: 'geschmort', braised: 'geschmort',
-  canned: 'aus der Dose', frozen: 'tiefgekühlt', dried: 'getrocknet', fresh: 'frisch', whole: 'ganz', white: 'weiß', brown: 'braun',
-  red: 'rot', green: 'grün', yellow: 'gelb', black: 'schwarz', sweet: 'süß', lean: 'mager', plain: 'natur', unsalted: 'ungesalzen',
-  salted: 'gesalzen', drained: 'abgetropft', peeled: 'geschält', unpeeled: 'ungeschält', skin: 'Haut', without: 'ohne', with: 'mit',
-  and: 'und', or: 'oder', regular: 'normal', enriched: 'angereichert', unenriched: 'nicht angereichert', nonfat: 'fettfrei',
-  lowfat: 'fettarm', fat: 'Fett', greek: 'griechisch', wild: 'wild', farmed: 'Zucht', atlantic: 'Atlantik', instant: 'Instant',
-  flesh: 'Fruchtfleisch', overripe: 'überreif', ripe: 'reif', unripe: 'unreif', prepared: 'zubereitet', unprepared: 'unzubereitet', brewed: 'aufgebrüht', sliced: 'geschnitten'
-};
-function germanName(desc) {
-  const parts = String(desc || '').split(/,\s*/).map(s => s.trim()).filter(Boolean);
-  const tr = parts.map(p => {
-    const low = p.toLowerCase();
-    if (EN_DE_PHRASES[low]) return EN_DE_PHRASES[low];
-    let s = p;
-    for (const [en, de] of Object.entries(EN_DE_PHRASES)) s = s.replace(new RegExp('\\b' + en.replace(/[-]/g, '\\-') + '\\b', 'i'), de);
-    return s.split(/\s+/).map(w => EN_DE[w.toLowerCase()] ?? w).join(' ');
-  });
-  const out = tr.filter((x, i) => x && x !== tr[i - 1]).join(', ');
-  return out ? out.charAt(0).toUpperCase() + out.slice(1) : String(desc || '');
-}
-
-/* ---- Suche nach Relevanz sortieren ---- */
-const normTxt = s => String(s || '').toLowerCase().replace(/ß/g, 'ss').normalize('NFD').replace(/[̀-ͯ]/g, '');
-const stemW = w => w.length > 3 ? w.replace(/(en|es|e|n|s)$/, '') : w;
-const tokens = s => normTxt(s).split(/[^a-z0-9]+/).filter(Boolean).map(stemW);
-/* Wörter, die auf verarbeitete Varianten hindeuten (auch in zusammengesetzten Wörtern wie "Bananenchips") */
-const PROC_WORDS = ['chips', 'pulver', 'saft', 'getrocknet', 'kuchen', 'smoothie', 'riegel', 'sirup', 'nektar', 'shake', 'fruchtgummi', 'muesli', 'musli',
-  'marmelade', 'konfiture', 'pudding', 'dried', 'dehydrated', 'powder', 'juice', 'canned', 'frozen', 'babyfood', 'baby food', 'candied',
-  'sweetened', 'syrup', 'dessert', 'bread', 'cake', 'muffin', 'flour', 'snack', 'puree', 'jam', 'nectar', 'chocolate', 'schoko'];
-function procPenalty(text, q) {
-  const t = normTxt(text), qn = normTxt(q);
-  return PROC_WORDS.some(w => t.includes(w) && !qn.includes(w)) ? 25 : 0;
-}
-function translateSmart(q) {
-  const keys = Object.keys(DE_EN);
-  return String(q).toLowerCase().split(/\s+/).filter(Boolean).map(w => {
-    if (DE_EN[w]) return DE_EN[w];
-    const k = keys.find(k => stemW(normTxt(k)) === stemW(normTxt(w)));
-    return k ? DE_EN[k] : w;
-  }).join(' ');
-}
-function searchScore(item, q, en) {
-  const qs = tokens(q), es = tokens(en);
-  if (!qs.length) return 0;
-  if (item.source === 'usda') {
-    const desc = item.nameEn || item.name;
-    const parts = normTxt(desc).split(/,\s*/);
-    const all = tokens(desc), first = tokens(parts[0]);
-    let s = 0;
-    const full = es.length && es.every(t => all.includes(t));
-    if (full) s += 35;
-    else if (es.some(t => all.includes(t))) s += 5;
-    if (es.length && first.includes(es[0])) s += 15;
-    if (full && /\braw\b/.test(normTxt(desc))) s += 12;
-    s -= 3 * Math.max(0, parts.length - 2);
-    return s - procPenalty(desc, en + ' ' + q);
-  }
-  const words = tokens(item.name);
-  let s = 0;
-  if (qs.every(t => words.includes(t))) {
-    s += 30;
-    if (words.length <= qs.length + 1) s += 25;
-    if (words[0] === qs[0]) s += 5;
-  } else if (qs.every(t => words.some(w => w.startsWith(t)))) {
-    s += 28;                                   /* zusammengesetztes Wort, z. B. "Hähnchenbrustfilet" bei "Hähnchenbrust" */
-    if (words.length <= qs.length + 1) s += 15;
-  } else if (qs.every(t => normTxt(item.name).includes(t))) s += 8;
-  s -= 3 * Math.max(0, words.length - qs.length - 1);
-  if (item.nova === 1) s += 6;
-  return s - procPenalty(item.name, q);
-}
-/* Eigene Treffer (schon gegessen, Favoriten, eigene Lebensmittel) zuerst, dann nach Punktzahl; bei Gleichstand bleibt die Reihenfolge der Quelle */
-function rankSearch(apiItems, ownItems, q, en) {
-  const qs = tokens(q), es = tokens(en);
-  const own = ownItems.filter(f => f.source !== 'supp' && qs.length && (qs.every(t => normTxt(f.name + ' ' + (f.nameEn || '')).includes(t))
-      || (f.nameEn && es.length && es.every(t => tokens(f.nameEn).includes(t)))))
-    .map(f => {
-      /* Gibt es denselben Eintrag frisch aus der Datenbank, dessen aktuelle Werte nehmen (gespeicherte können veraltet sein) */
-      const fresh = apiItems.find(a => foodKey(a) === foodKey(f));
-      return fresh ? { ...fresh, mine: true } : { ...f, mine: true };
-    });
-  const ownKeys = new Set(own.map(foodKey));
-  const seen = new Set();
-  const scored = apiItems.filter(it => !ownKeys.has(foodKey(it)))
-    .filter(it => { const k = foodKey(it); if (seen.has(k)) return false; seen.add(k); return true; })
-    .map((it, i) => ({ it, s: searchScore(it, q, en) - i * 0.01 }))
-    .sort((a, b) => b.s - a.s).map(x => x.it);
-  const ownSorted = own.map((it, i) => ({ it, s: searchScore(it, q, en) - i * 0.01 })).sort((a, b) => b.s - a.s).map(x => x.it);
-  return [...ownSorted, ...scored];
-}
-
-/* Gibt es zum Suchbegriff offizielle Laborwerte (USDA, alle Suchwörter passen)? Dann nur diese zeigen,
-   Einträge von Nutzern (Open Food Facts) werden ausgeblendet. Eigene Lebensmittel und Rezepte bleiben. */
-function labOnly(ranked, q, en) {
-  const es = tokens(en);
-  const hasLab = es.length > 0 && ranked.some(x => x.source === 'usda' && es.every(t => tokens(x.nameEn || x.name).includes(t)));
-  if (!hasLab) return { list: ranked, hidden: [] };
-  return { list: ranked.filter(x => x.source !== 'off'), hidden: ranked.filter(x => x.source === 'off') };
-}
-
 /* ---- Einfache Infos pro Nährstoff: wofür, ob der Körper ihn speichert, wann zu viel schadet ----
    store: 'week' = der Körper hat Vorräte, der Schnitt über mehrere Tage zählt; 'day' = kaum Vorrat, möglichst täglich */
 const NUTRIENT_INFO = {
@@ -1248,18 +1008,18 @@ const NUTRIENT_INFO = {
   fiber: { what: 'Gut für die Verdauung und hält länger satt.', store: 'day' },
   ala: { what: 'Lebensnotwendige Omega-3-Fettsäure aus Pflanzen, gut für Herz und Gefäße. Der Körper kann sie nicht selbst bilden.', store: 'week' },
   epadha: { what: 'Omega-3 aus Fisch, wichtig für Herz, Gehirn und Augen.', store: 'week', more: '1 bis 2 Portionen fetter Fisch pro Woche reichen. Ein Tag ohne Fisch ist kein Problem.' },
-  vitA: { what: 'Wichtig für die Augen (Sehen im Dunkeln), die Haut und das Immunsystem.', store: 'week', more: 'Dauerhaft sehr viel ist schädlich. Vorsicht vor allem bei Nahrungsergänzungsmitteln und wenn du oft Leber isst.' },
+  vitA: { what: 'Wichtig für die Augen (Sehen im Dunkeln), die Haut und das Immunsystem.', store: 'week', more: 'Die Menge steht in RAE, der neueren und genaueren Einheit. Die ältere Einheit RE zeigt bei Gemüse etwa doppelt so viel. Dauerhaft sehr viel Vitamin A ist schädlich. Vorsicht vor allem bei Nahrungsergänzungsmitteln und wenn du oft Leber isst.' },
   vitC: { what: 'Stärkt das Immunsystem, hilft beim Bindegewebe und verbessert die Aufnahme von Eisen.', store: 'day' },
   vitD: { what: 'Wichtig für Knochen, Muskeln und das Immunsystem. Der Körper bildet es vor allem selbst, wenn Sonne auf die Haut scheint.', store: 'week', more: 'Aus Essen allein kommt man kaum auf den Richtwert. Nahrungsergänzung nicht dauerhaft hoch dosieren.' },
-  vitE: { what: 'Schützt die Zellen vor Schäden.', store: 'week' },
+  vitE: { what: 'Schützt die Zellen vor Schäden.', store: 'week', more: 'Die Menge steht als α-Tocopherol, der Form, die der Körper wirklich nutzt.' },
   vitK: { what: 'Wichtig für die Blutgerinnung und die Knochen.', store: 'week' },
   b1: { what: 'Hilft, Energie aus Kohlenhydraten zu gewinnen, und ist wichtig für die Nerven.', store: 'day' },
   b2: { what: 'Wichtig für den Energiestoffwechsel, die Haut und die Augen.', store: 'day' },
-  b3: { what: 'Wichtig für den Energiestoffwechsel, die Haut und die Nerven.', store: 'day' },
+  b3: { what: 'Wichtig für den Energiestoffwechsel, die Haut und die Nerven.', store: 'day', more: 'NE heißt Niacin-Äquivalente: Niacin plus das, was der Körper aus der Aminosäure Tryptophan selbst bildet.' },
   b5: { what: 'Wichtig für den Energiestoffwechsel.', store: 'day' },
   b6: { what: 'Wichtig für den Eiweißstoffwechsel und die Nerven.', store: 'day', more: 'Hochdosierte Nahrungsergänzung über längere Zeit kann den Nerven schaden.' },
   b7: { what: 'Wichtig für Haut, Haare und den Stoffwechsel.', store: 'day' },
-  b9: { what: 'Wichtig für die Zellteilung und die Blutbildung.', store: 'week' },
+  b9: { what: 'Wichtig für die Zellteilung und die Blutbildung.', store: 'week', more: 'DFE heißt Folat-Äquivalente. Folsäure aus Präparaten wird besser aufgenommen als Folat aus Essen und zählt deshalb mehr.' },
   b12: { what: 'Wichtig für die Blutbildung und die Nerven. Steckt fast nur in tierischen Lebensmitteln.', store: 'week', more: 'Wer vegan isst, braucht ein B12-Präparat.' },
   ca: { what: 'Baustoff für Knochen und Zähne, wichtig für die Muskeln.', store: 'week' },
   fe: { what: 'Transportiert Sauerstoff im Blut.', store: 'week', more: 'Eisen-Präparate nur nach Rücksprache mit dem Arzt, zu viel Eisen schadet.' },
@@ -1422,69 +1182,7 @@ async function loadAll() {
   await loadWeek();
 }
 
-/* ---------------------------------------------------------------------
-   Datenquellen
-   --------------------------------------------------------------------- */
-async function fetchJson(url, ms = 15000) {
-  const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
-  try {
-    const r = await fetch(url, { signal: c.signal });
-    if (!r.ok) { const err = new Error('HTTP ' + r.status); err.status = r.status; throw err; }
-    return await r.json();
-  } finally { clearTimeout(t); }
-}
-const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade,image_front_small_url,image_small_url,image_front_url';
-
-/* Suche bei Open Food Facts über /cgi/search.pl (erlaubt Anfragen von fremden Webseiten).
-   Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
-   Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
-   und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
 const APP_VERSION = '5.0';
-const OFF_FIELDS_BASIC = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
-const offCache = new Map();
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function fetchJsonRetry(url, ms) {
-  try { return await fetchJson(url, ms); }
-  catch (e) {
-    const transient = !e.status || e.status >= 500 || e.status === 429;
-    if (!transient || e.name === 'AbortError') throw e;
-    await sleep(1500);
-    return await fetchJson(url, ms);
-  }
-}
-async function searchOFF(q) {
-  const key = q.trim().toLowerCase();
-  if (offCache.has(key)) return offCache.get(key);
-  const mk = fields => `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${fields}`;
-  const de = '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany';
-  let base = mk(OFF_FIELDS), data;
-  try { data = await fetchJson(base + de, 20000); }
-  catch (e) {
-    if (e.name === 'AbortError' || (e.status && e.status < 500 && e.status !== 429)) throw e;
-    console.warn('Suche mit Bildfeldern fehlgeschlagen, versuche es ohne', e);
-    await sleep(1200);
-    base = mk(OFF_FIELDS_BASIC);
-    data = await fetchJsonRetry(base + de, 20000);
-  }
-  if (!(data.products || []).length) data = await fetchJsonRetry(base, 20000);
-  const res = (data.products || []).map(fromOFF).filter(Boolean);
-  offCache.set(key, res);
-  return res;
-}
-function offErrorText(e) {
-  if (e && e.name === 'AbortError') return 'Die Suche von Open Food Facts hat zu lange gebraucht. Versuch es gleich noch einmal.';
-  if (e && (e.status === 429 || e.status === 503 || !e.status)) return 'Die Suche von Open Food Facts hat nicht geantwortet. Das passiert, wenn deren Server überlastet ist oder in kurzer Zeit viele Suchen kamen (erlaubt sind 10 pro Minute). Warte eine Minute und such dann noch einmal. Der Barcode-Scan läuft über einen anderen Weg und geht meistens trotzdem.';
-  return `Open Food Facts hat mit einem Fehler geantwortet (Code ${e.status}). Versuch es gleich noch einmal.`;
-}
-async function lookupOFF(code) {
-  const data = await fetchJson(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`);
-  return data.status === 1 ? fromOFF(data.product) : null;
-}
-async function searchUSDA(q) {
-  const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(USDA_API_KEY)}&query=${encodeURIComponent(q)}&dataType=Foundation,SR%20Legacy&pageSize=20`;
-  const data = await fetchJson(url);
-  return (data.foods || []).map(fromUSDA).filter(Boolean);
-}
 
 /* ---------------------------------------------------------------------
    Ziele und abgeleitete Werte
@@ -1927,7 +1625,7 @@ function libHTML() {
   };
   return `<div class="libgrid">
     ${sec('Mahlzeit-Vorlagen', 'tpl', S.lib.templates, '', 'Speichere eine Mahlzeit über „⋯“ neben Frühstück, Mittag oder Abend als Vorlage. Dann trägst du sie mit einem Tipp wieder ein.')}
-    ${sec('Eigene Lebensmittel', 'food', foods, 'Neu', 'Für Essen, das in keiner Datenbank steht, zum Beispiel ein Gericht aus dem Restaurant.')}
+    ${sec('Eigene Lebensmittel', 'food', foods, 'Neu', 'Dein Essen mit den Nährwerten, die du selbst einträgst, zum Beispiel ein Gericht aus dem Restaurant.')}
     ${sec('Rezepte', 'recipe', recipes, 'Neu', 'Ein Rezept besteht aus Zutaten. Die App rechnet daraus die Werte pro 100 g aus.')}
     ${sec('Nahrungsergänzung', 'supp', S.lib.supplements, 'Neu', 'Tabletten, Kapseln oder Pulver mit ihren Inhaltsstoffen pro Stück.')}
     ${sec('Favoriten', 'fav', S.lib.favorites, '', 'Mit dem Stern merkst du dir Essen für später.')}</div>`;
@@ -2029,7 +1727,7 @@ function modalShell(title, sub, body, footer = '') {
     <div class="sheet-body">${body}</div>${footer}
   </div>`;
 }
-function closeModal() { stopScan(); S.modal = null; $('#modal-root').innerHTML = ''; }
+function closeModal() { S.modal = null; $('#modal-root').innerHTML = ''; }
 function dismissModal() {
   const m = S.modal; if (!m) return;
   const backToRecipe = m.type === 'add' && m.mode === 'pick' && S.draft;
@@ -2050,21 +1748,15 @@ function openAdd(date, opts = {}) {
   let meal = opts.meal && opts.meal !== 'erg' ? opts.meal : (isToday ? mealForTime(hhmm(now)) : 'mittag');
   const time = opts.meal && opts.meal !== 'erg' ? (isToday && mealForTime(hhmm(now)) === meal ? hhmm(now) : (MEALS.find(x => x.id === meal) || {}).def)
     : (isToday ? hhmm(now) : (MEALS.find(x => x.id === meal) || {}).def);
-  const tab = opts.meal === 'erg' && mode === 'log' ? 'supp' : 'search';
-  S.modal = { type: 'add', mode, date, tab, results: [], shown: [], picked: null, notes: [], loading: false, query: '', meal, time, onPick: opts.onPick || null };
-  const tabs = [['search', 'Suchen'], ['scan', 'Scannen'], ['mine', 'Meine']].concat(mode === 'log' ? [['supp', 'Ergänzung']] : []);
+  const tab = opts.meal === 'erg' && mode === 'log' ? 'supp' : 'mine';
+  S.modal = { type: 'add', mode, date, tab, shown: [], picked: null, notes: [], meal, time, onPick: opts.onPick || null };
+  const tabs = [['mine', 'Meine']].concat(mode === 'log' ? [['supp', 'Ergänzung']] : []);
   const when = mode === 'log' ? `<div class="when" id="when" ${tab === 'supp' ? 'hidden' : ''}><select id="pmeal" aria-label="Mahlzeit">${MEALS.filter(x => x.id !== 'erg').map(x => `<option value="${x.id}" ${x.id === meal ? 'selected' : ''}>${x.label}</option>`).join('')}</select><input id="ptime" type="time" value="${esc(time)}" aria-label="Uhrzeit"></div>` : '';
   $('#modal-root').innerHTML = modalShell(mode === 'pick' ? 'Zutat hinzufügen' : 'Essen eintragen', mode === 'pick' ? 'Für dein Rezept' : dateLabel(date), `
     <div class="tabs" role="tablist">${tabs.map(([id, l]) => `<button role="tab" id="t-${id}" data-action="tab" data-tab="${id}" aria-selected="${id === tab}">${l}</button>`).join('')}</div>
     ${when}
-    <div id="pane-search" ${tab !== 'search' ? 'hidden' : ''}><form class="row2" data-form="search"><input name="q" type="search" enterkeyhint="search" placeholder="Skyr, Alpro, Hähnchen …" aria-label="Lebensmittel suchen" autocomplete="off" required minlength="2"><button class="btn primary" type="submit">Suchen</button></form></div>
-    <div id="pane-scan" hidden><div id="reader"></div>
-      <div class="row2"><button class="btn primary" data-action="start-scan" type="button">Kamera starten</button></div>
-      <form class="row2" data-form="code"><input name="code" inputmode="numeric" pattern="[0-9]{8,14}" placeholder="Oder Barcode-Nummer eintippen" aria-label="Barcode-Nummer" required><button class="btn" type="submit">Laden</button></form>
-      <p class="hint">Die Kamera braucht HTTPS und deine Erlaubnis.</p></div>
     <div id="results" aria-live="polite"></div>`, `<div class="pending" id="pending" hidden></div>`);
   renderResults();
-  if (tab === 'search' && window.matchMedia && window.matchMedia('(pointer:fine)').matches) setTimeout(() => { const i = $('#pane-search input'); if (i) i.focus(); }, 0);
 }
 const isFavRef = ref => S.lib.favorites.some(f => foodKey(f) === foodKey(ref));
 function resRowHTML(it, i) {
@@ -2075,7 +1767,7 @@ function resRowHTML(it, i) {
     chips = `<span class="chip">pro ${esc(it.unit || 'Stk')}</span>` + ks.map(k => `<span class="chip">${labelOf(k)} ${fmtNum(it.perUnit[k], decOf(k))} ${unitOf(k)}</span>`).join('');
   } else {
     const p = it.per100 || {}, micro = MICRO_KEYS.filter(k => p[k] != null).length;
-    const src = it.mine ? '<span class="chip src mine">Schon gegessen</span>' : '';
+    const src = '';
     chips = `${src}<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span>${it.source === 'recipe' ? '<span class="chip">Rezept</span>' : ''}${it.source === 'custom' ? '<span class="chip">Eigenes</span>' : ''}${novaPill(it.nova)}${nutriPill(it.nutri)}<span class="chip" title="So viele der ${MICRO_KEYS.length} Vitamine und Mineralstoffe stehen in den Daten">${micro}/${MICRO_KEYS.length} Mikros</span>`;
   }
   const fav = isFavRef(it);
@@ -2118,28 +1810,15 @@ function renderResults() {
   const notes = (m.notes || []).map(n => `<p class="hint">${esc(n)}</p>`).join('');
   const group = (title, list, offset) => list.length ? `<h3>${title}</h3><ul class="results">${list.map((it, j) => resRowHTML(it, offset + j)).join('')}</ul>` : '';
   let html = '';
-  if ((m.tab === 'search' || m.tab === 'scan') && (m.results.length || m.loading || m.query)) {
-    const TOP = 8;
-    const pool0 = m.showUser ? [...m.results, ...(m.hiddenUser || [])] : m.results;
-    m.shown = m.showAll ? pool0 : pool0.slice(0, TOP);
-    const rest = pool0.length - m.shown.length;
-    const hid = (m.hiddenUser || []).length;
-    const labNote = hid && !m.showUser ? `<p class="hint">Hier stehen nur offizielle Laborwerte. ${hid} von Nutzern abgetippte Einträge sind ausgeblendet. <button class="link" data-action="show-user">Trotzdem zeigen</button></p>` : '';
-    html = labNote + group(m.results.length ? 'Beste Treffer, Werte pro 100 g' : '', m.shown, 0)
-      + (rest > 0 ? `<button class="btn" style="width:100%;justify-content:center;margin-top:10px" data-action="show-all">Weitere Treffer anzeigen (${rest})</button>` : '')
-      + (m.loading ? '<p class="hint">Sucht …</p>' : '')
-      + (m.results.some(x => x.source === 'off') ? '<p class="foot">Produktfotos und -daten: Open Food Facts, eine offene Datenbank, in der Nutzer Produkte eintragen.</p>' : '');
-  } else if (m.tab === 'search' || m.tab === 'scan') {
+  if (m.tab === 'mine') {
     const fav = S.lib.favorites.filter(okKind);
     const rec = S.lib.recent.filter(okKind).filter(r => !fav.some(f => foodKey(f) === foodKey(r))).slice(0, 12);
-    m.shown = m.tab === 'search' ? [...rec, ...fav] : [];
-    html = m.tab === 'search' ? (group('Zuletzt gegessen', rec, 0) + group('Favoriten', fav, rec.length)
-      || '<p class="hint">Hier erscheint, was du zuletzt gegessen hast. Frische Lebensmittel wie Obst, Gemüse und Fleisch findest du mit deutschen oder englischen Begriffen.</p>') : '';
-  } else if (m.tab === 'mine') {
-    const own = S.lib.custom;
-    m.shown = own;
+    const seen = new Set([...rec, ...fav].map(foodKey));
+    const own = S.lib.custom.filter(f => !seen.has(foodKey(f)));
+    m.shown = [...rec, ...fav, ...own];
     const tpls = m.mode === 'log' && S.lib.templates.length ? `<h3>Mahlzeit-Vorlagen</h3><div class="menu">${S.lib.templates.map(t => `<button class="menu-item" data-action="tpl-apply" data-id="${esc(t.id)}">${esc(t.name)}<small>${t.items.length} Einträge, ${fmtNum(templateKcal(t))} kcal, kommt zu ${mealLabel(m.meal)}</small></button>`).join('')}</div>` : '';
-    html = tpls + (own.length ? group('Eigene Lebensmittel und Rezepte', own, 0) : '<p class="hint">Du hast noch keine eigenen Lebensmittel oder Rezepte.</p>')
+    html = tpls + group('Zuletzt gegessen', rec, 0) + group('Favoriten', fav, rec.length)
+      + (own.length ? group('Eigene Lebensmittel und Rezepte', own, rec.length + fav.length) : (m.shown.length ? '' : '<p class="hint">Du hast noch keine eigenen Lebensmittel oder Rezepte.</p>'))
       + `<p class="hint"><button class="link" data-action="goto-lib">Eigenes Essen, Rezepte oder Ergänzungen anlegen</button></p>`;
   } else if (m.tab === 'supp') {
     m.shown = S.lib.supplements;
@@ -2176,66 +1855,6 @@ function renderPending() {
     <button class="btn primary" data-action="add-pending">${m.mode === 'log' ? 'Eintragen' : 'Als Zutat nehmen'}</button>`;
   const g = $('#pqty'); if (g && window.matchMedia && window.matchMedia('(pointer:fine)').matches) { g.focus(); g.select(); }
 }
-async function doSearch(q) {
-  const m = S.modal; if (!m || m.type !== 'add') return;
-  q = q.trim(); if (q.length < 2) return;
-  m.query = q; m.results = []; m.picked = null; m.qty = null; m.loading = true; m.notes = []; m.showAll = false;
-  renderPending(); renderResults();
-  const en = translateSmart(q);
-  const [off, usda] = await Promise.allSettled([searchOFF(q), searchUSDA(en)]);
-  if (S.modal !== m) return;
-  m.loading = false;
-  if (off.status === 'fulfilled') m.results.push(...off.value);
-  else { console.error(off.reason); m.notes.push(offErrorText(off.reason) + (usda.status === 'fulfilled' && usda.value.length ? ' Frische Lebensmittel aus der USDA-Datenbank findest du trotzdem unten.' : '')); }
-  if (usda.status === 'fulfilled') m.results.push(...usda.value.map(x => ({ ...x, nameEn: x.name, name: germanName(x.name) })));
-  else if (usda.reason && usda.reason.status === 429) m.notes.push('Das Tageslimit der USDA-Datenbank ist erreicht. Mit einem eigenen kostenlosen USDA-Schlüssel in der Datei passiert das nicht.');
-  else m.notes.push('Die USDA-Datenbank antwortet gerade nicht.');
-  const lab = labOnly(rankSearch(m.results, [...S.lib.recent, ...S.lib.favorites, ...S.lib.custom], q, en), q, en);
-  m.results = lab.list; m.hiddenUser = lab.hidden; m.showUser = false;
-  if (!m.results.length && !m.notes.length) m.notes.push('Nichts gefunden. Probier einen anderen Begriff oder leg das Essen unter „Meine“ selbst an.');
-  renderResults();
-}
-async function doLookup(code) {
-  const m = S.modal; if (!m || m.type !== 'add') return;
-  m.query = code; m.results = []; m.picked = null; m.qty = null; m.loading = true; m.notes = [];
-  renderPending(); renderResults();
-  try {
-    const it = await lookupOFF(code.trim());
-    if (S.modal !== m) return;
-    if (it) { m.results = [it]; m.loading = false; renderResults(); m.picked = 0; renderResults(); renderPending(); return; }
-    m.notes.push('Dieses Produkt ist bei Open Food Facts nicht eingetragen oder hat keine Nährwerte. Such es per Name oder leg es unter „Meine“ an.');
-  } catch (e) { console.error(e); m.notes.push(offErrorText(e)); }
-  m.loading = false; renderResults();
-}
-let scanner = null;
-function loadScript(src) {
-  return new Promise((res, rej) => {
-    if (window.Html5Qrcode) return res();
-    const s = document.createElement('script'); s.src = src; s.onload = res;
-    s.onerror = () => rej(new Error('Scanner konnte nicht geladen werden'));
-    document.head.appendChild(s);
-  });
-}
-async function stopScan() {
-  if (!scanner) return;
-  const sc = scanner; scanner = null;
-  try { await sc.stop(); sc.clear(); } catch { /* schon gestoppt */ }
-}
-async function startScan() {
-  const m = S.modal; if (!m) return;
-  try {
-    await loadScript(SCAN_LIB); await stopScan();
-    const F = window.Html5QrcodeSupportedFormats;
-    scanner = new window.Html5Qrcode('reader', { formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E], useBarCodeDetectorIfSupported: true, verbose: false });
-    await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 260, height: 140 } },
-      async text => { await stopScan(); const i = $('#pane-scan input'); if (i) i.value = text; doLookup(text); }, () => { });
-  } catch (e) {
-    console.error(e); scanner = null;
-    m.notes = ['Die Kamera ist nicht verfügbar. Sie braucht HTTPS und deine Erlaubnis. Du kannst die Nummer auch eintippen.'];
-    renderResults();
-  }
-}
-
 /* Mahlzeit-Menü: von gestern übernehmen, Vorlagen */
 async function openMealMenu(meal) {
   const date = S.selected, prevDate = shiftDate(date, -1);
@@ -2472,15 +2091,10 @@ document.addEventListener('click', async e => {
       const m = S.modal; if (!m || m.type !== 'add') break;
       const t = el.dataset.tab; m.tab = t; m.picked = null;
       $$('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
-      $('#pane-search').hidden = t !== 'search'; $('#pane-scan').hidden = t !== 'scan';
       if ($('#when')) $('#when').hidden = t === 'supp';
-      if (t !== 'scan') stopScan();
       renderResults(); renderPending();
       break;
     }
-    case 'start-scan': startScan(); break;
-    case 'show-all': { const m = S.modal; if (m && m.type === 'add') { m.showAll = true; renderResults(); } break; }
-    case 'show-user': { const m = S.modal; if (m && m.type === 'add') { m.showUser = true; renderResults(); } break; }
     case 'pick': { if (e.target.closest('.nutdetail')) break; const m = S.modal; if (m && m.type === 'add') { m.picked = Number(el.dataset.idx); m.qty = null; renderResults(); renderPending(); } break; }
     case 'fav-toggle': { const m = S.modal; const f = m && m.shown[Number(el.dataset.idx)]; if (f) await toggleFav(f); break; }
     case 'fav-item': {
@@ -2579,9 +2193,7 @@ document.addEventListener('submit', async e => {
   e.preventDefault();
   const kind = f.dataset.form;
   const data = Object.fromEntries(new FormData(f));
-  if (kind === 'search') doSearch(data.q || '');
-  else if (kind === 'code') doLookup(String(data.code || '').replace(/\D/g, ''));
-  else if (kind === 'settings') {
+  if (kind === 'settings') {
     const w = parseDecimal(data.weight), age = parseDecimal(data.age), h = parseDecimal(data.height);
     if (!(w >= 30 && w <= 250)) { showFormError(f, 'Gib ein Gewicht zwischen 30 und 250 kg ein.'); return; }
     if (Number.isNaN(age) || (age !== null && !(age >= 14 && age <= 100))) { showFormError(f, 'Gib ein Alter zwischen 14 und 100 ein, oder lass das Feld leer.'); return; }
