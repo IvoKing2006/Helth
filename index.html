@@ -232,6 +232,11 @@ svg{display:block}
 
 .nrow{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;padding:9px 0;border-top:1px solid var(--line)}
 .nrow:first-of-type{border-top:0}
+.tap{cursor:pointer;border-radius:12px}
+.tap:hover{background:color-mix(in srgb,var(--text) 5%,transparent)}
+.nrow.tap{margin:0 -8px;padding-left:8px;padding-right:8px}
+.info-i{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--faint);color:var(--muted);font-size:.7rem;font-weight:800;font-style:normal;vertical-align:1px;margin-left:2px}
+.sugg.ok svg{color:var(--micro)}
 .nn{font-weight:550}
 .nv{color:var(--muted);font-size:.9rem;white-space:nowrap;text-align:right}
 .nv b{color:var(--text);font-size:1rem;font-weight:750}
@@ -1174,6 +1179,58 @@ function labOnly(ranked, q, en) {
   if (!hasLab) return { list: ranked, hidden: [] };
   return { list: ranked.filter(x => x.source !== 'off'), hidden: ranked.filter(x => x.source === 'off') };
 }
+
+/* ---- Einfache Infos pro Nährstoff: wofür, ob der Körper ihn speichert, wann zu viel schadet ----
+   store: 'week' = der Körper hat Vorräte, der Schnitt über mehrere Tage zählt; 'day' = kaum Vorrat, möglichst täglich */
+const NUTRIENT_INFO = {
+  protein: { what: 'Baustoff für Muskeln, Haut, Haare und das Immunsystem.', store: 'day' },
+  fiber: { what: 'Gut für die Verdauung und hält länger satt.', store: 'day' },
+  ala: { what: 'Lebensnotwendige Omega-3-Fettsäure aus Pflanzen, gut für Herz und Gefäße. Der Körper kann sie nicht selbst bilden.', store: 'week' },
+  epadha: { what: 'Omega-3 aus Fisch, wichtig für Herz, Gehirn und Augen.', store: 'week', more: '1 bis 2 Portionen fetter Fisch pro Woche reichen. Ein Tag ohne Fisch ist kein Problem.' },
+  vitA: { what: 'Wichtig für die Augen (Sehen im Dunkeln), die Haut und das Immunsystem.', store: 'week', more: 'Dauerhaft sehr viel ist schädlich. Vorsicht vor allem bei Nahrungsergänzungsmitteln und wenn du oft Leber isst.' },
+  vitC: { what: 'Stärkt das Immunsystem, hilft beim Bindegewebe und verbessert die Aufnahme von Eisen.', store: 'day' },
+  vitD: { what: 'Wichtig für Knochen, Muskeln und das Immunsystem. Der Körper bildet es vor allem selbst, wenn Sonne auf die Haut scheint.', store: 'week', more: 'Aus Essen allein kommt man kaum auf den Richtwert. Nahrungsergänzung nicht dauerhaft hoch dosieren.' },
+  vitE: { what: 'Schützt die Zellen vor Schäden.', store: 'week' },
+  vitK: { what: 'Wichtig für die Blutgerinnung und die Knochen.', store: 'week' },
+  b1: { what: 'Hilft, Energie aus Kohlenhydraten zu gewinnen, und ist wichtig für die Nerven.', store: 'day' },
+  b2: { what: 'Wichtig für den Energiestoffwechsel, die Haut und die Augen.', store: 'day' },
+  b3: { what: 'Wichtig für den Energiestoffwechsel, die Haut und die Nerven.', store: 'day' },
+  b5: { what: 'Wichtig für den Energiestoffwechsel.', store: 'day' },
+  b6: { what: 'Wichtig für den Eiweißstoffwechsel und die Nerven.', store: 'day', more: 'Hochdosierte Nahrungsergänzung über längere Zeit kann den Nerven schaden.' },
+  b7: { what: 'Wichtig für Haut, Haare und den Stoffwechsel.', store: 'day' },
+  b9: { what: 'Wichtig für die Zellteilung und die Blutbildung.', store: 'week' },
+  b12: { what: 'Wichtig für die Blutbildung und die Nerven. Steckt fast nur in tierischen Lebensmitteln.', store: 'week', more: 'Wer vegan isst, braucht ein B12-Präparat.' },
+  ca: { what: 'Baustoff für Knochen und Zähne, wichtig für die Muskeln.', store: 'week' },
+  fe: { what: 'Transportiert Sauerstoff im Blut.', store: 'week', more: 'Eisen-Präparate nur nach Rücksprache mit dem Arzt, zu viel Eisen schadet.' },
+  mg: { what: 'Wichtig für Muskeln und Nerven.', store: 'day' },
+  zn: { what: 'Wichtig für das Immunsystem, die Wundheilung und die Haut.', store: 'day' },
+  k: { what: 'Wichtig für Herz, Muskeln und einen gesunden Blutdruck.', store: 'day' },
+  se: { what: 'Wichtig für die Schilddrüse und schützt die Zellen.', store: 'week', more: 'Paranüsse enthalten sehr viel Selen, 1 bis 2 am Tag reichen.' },
+  i: { what: 'Der Körper braucht Jod für die Schilddrüsenhormone.', store: 'week', more: 'Jodsalz statt normalem Salz ist der einfachste Weg.' },
+  p: { what: 'Baustoff für Knochen und Zähne, wichtig für die Energie in den Zellen.', store: 'week' },
+  cu: { what: 'Wichtig für die Blutbildung und das Bindegewebe.', store: 'week' },
+  mn: { what: 'Wichtig für Knochen und den Stoffwechsel.', store: 'week' },
+  salt: { what: 'Etwas Salz braucht der Körper, zu viel erhöht auf Dauer den Blutdruck.', store: 'max' },
+  caffeine: { what: 'Macht wach. Mehr als 400 mg am Tag (etwa 4 Tassen Kaffee) kann zu Herzklopfen und Schlafproblemen führen.', store: 'max' },
+  fat: { what: 'Liefert Energie und hilft, die Vitamine A, D, E und K aufzunehmen.', store: 'none' },
+  carbs: { what: 'Die wichtigste schnelle Energiequelle für Gehirn und Muskeln.', store: 'none' },
+  sugar: { what: 'Teil der Kohlenhydrate. Weniger ist besser, vor allem bei zugesetztem Zucker.', store: 'none' },
+  satfat: { what: 'Steckt vor allem in Butter, Käse, Wurst und Fertigprodukten. Besser in Maßen.', store: 'none' },
+  chol: { what: 'Steckt in tierischen Lebensmitteln. Der Körper bildet es auch selbst.', store: 'none' },
+  omega3: { what: 'Summe aller Omega-3-Fettsäuren. Aufgeteilt siehst du ALA (pflanzlich) und EPA + DHA (Fisch).', store: 'none' }
+};
+
+/* Schnitt der Abdeckung über die Tage mit Einträgen (z. B. die letzten 7) */
+function avgPct(daysArr, key, target) {
+  const logged = daysArr.filter(d => d && d.items && d.items.length);
+  if (!logged.length || !target) return null;
+  return logged.reduce((a, d) => a + sumItems(d.items)[key].sum / target.value, 0) / logged.length;
+}
+/* Lücken sortieren: Was der Körper speichert und im Wochenschnitt passt, rückt nach hinten */
+function orderGaps(low, weekPct) {
+  const relaxed = g => NUTRIENT_INFO[g.key] && NUTRIENT_INFO[g.key].store === 'week' && weekPct[g.key] != null && weekPct[g.key] >= 1;
+  return [...low.filter(g => !relaxed(g)), ...low.filter(relaxed).map(g => ({ ...g, weekOk: true }))];
+}
 /* PURE:END */
 
 /* ---------------------------------------------------------------------
@@ -1320,7 +1377,7 @@ const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_gro
    Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
    Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
    und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
-const APP_VERSION = '4.9';
+const APP_VERSION = '5.0';
 const OFF_FIELDS_BASIC = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
 const offCache = new Map();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1377,6 +1434,7 @@ function latestWeight(upTo) {
 function effProfile(date = S.selected) { const w = latestWeight(date); return w ? { ...S.profile, weight: w } : S.profile; }
 const targetsFor = (date = S.selected) => computeTargets(effProfile(date));
 const pool = () => foodPool(S.days, S.lib);
+const last7 = date => Array.from({ length: 7 }, (_, i) => getDay(shiftDate(date, i - 6)));
 const histDates = n => { const t = parseDate(todayStr()); return Array.from({ length: n }, (_, i) => fmtDate(addDays(t, i - n + 1))); };
 
 /* ---------------------------------------------------------------------
@@ -1504,12 +1562,19 @@ function gapsHTML(date, day, tot, targets) {
       <p>Trag dein Essen ein. Hier siehst du dann sofort, welche Vitamine und Nährstoffe dir noch fehlen und womit du sie auffüllen kannst.</p>
       <button class="btn primary" data-action="add">${ICON.plus} Essen eintragen</button></section>`;
   }
-  const { low, over, noData } = findGaps(tot, targets, 3, day.items);
+  const gaps = findGaps(tot, targets, GAP_KEYS.length, day.items);
+  const { over, noData } = gaps;
+  const wk = last7(date), weekPct = {};
+  for (const g of gaps.low) weekPct[g.key] = avgPct(wk, g.key, targets[g.key]);
+  const low = orderGaps(gaps.low, weekPct).slice(0, 3);
   const P = pool();
   const items = low.map(g => {
     const t = targets[g.key], rest = Math.max(0, t.value - tot[g.key].sum);
-    return `<li><div class="gtop"><span class="gname">${labelOf(g.key)}</span><span class="gval">${approxMark(g.approx)}${pctTxt(g.pct)}</span></div>
-      ${barHTML(g.pct)}<p class="grest">Noch ${fmtNum(rest, decOf(g.key))} ${unitOf(g.key)} bis zum Tagesziel von ${fmtNum(t.value, decOf(g.key))} ${unitOf(g.key)}</p>${suggLine(g.key, t, P)}</li>`;
+    const extra = g.weekOk
+      ? `<p class="sugg ok">${ICON.check}<span>Speichert der Körper. Im 7-Tage-Schnitt hast du ${pctTxt(weekPct[g.key])}, heute ist das also kein Problem.</span></p>`
+      : suggLine(g.key, t, P);
+    return `<li data-action="nut-info" data-key="${g.key}" role="button" tabindex="0" class="tap"><div class="gtop"><span class="gname">${labelOf(g.key)} <span class="info-i" aria-hidden="true">i</span></span><span class="gval">${approxMark(g.approx)}${pctTxt(g.pct)}</span></div>
+      ${barHTML(g.pct)}<p class="grest">Noch ${fmtNum(rest, decOf(g.key))} ${unitOf(g.key)} bis zum Tagesziel von ${fmtNum(t.value, decOf(g.key))} ${unitOf(g.key)}</p>${extra}</li>`;
   }).join('');
   const ov = over.map(o => `<p class="warn">${ICON.warn}<span><b>Zu viel ${labelOf(o.key)}:</b> ${fmtNum(tot[o.key].sum, decOf(o.key))} ${unitOf(o.key)}, empfohlen sind höchstens ${fmtNum(targets[o.key].value, decOf(o.key))} ${unitOf(o.key)}.</span></p>`).join('');
   const body = low.length ? `<ul class="gaplist">${items}</ul>` : `<p class="done">${ICON.check}<span>Alle Vitamine, Mineralstoffe, Eiweiß und Ballaststoffe sind gedeckt.</span></p>`;
@@ -1555,8 +1620,8 @@ function nutrientsHTML(tot, targets, items) {
   const row = key => {
     const n = NUTRIENTS.find(x => x.key === key), t = targets[key], e = tot[key];
     const p = t ? e.sum / t.value : null;
-    if (!hasData(items, key)) return `<div class="nrow"><span class="nn">${n.label}</span><span class="nv">keine Daten</span></div>`;
-    return `<div class="nrow"><span class="nn">${n.label}</span><span class="nv">${approxMark(e.missing > 0)}<b>${fmtNum(e.sum, n.dec)}</b>${t ? ` / ${t.type === 'max' ? 'max. ' : ''}${fmtNum(t.value, n.dec)}` : ''} ${n.unit}</span>${t ? barHTML(p, { over: t.type === 'max' && p > 1, max: t.type === 'max' }) : ''}</div>`;
+    if (!hasData(items, key)) return `<div class="nrow tap" data-action="nut-info" data-key="${key}" role="button" tabindex="0"><span class="nn">${n.label}</span><span class="nv">keine Daten</span></div>`;
+    return `<div class="nrow tap" data-action="nut-info" data-key="${key}" role="button" tabindex="0"><span class="nn">${n.label}</span><span class="nv">${approxMark(e.missing > 0)}<b>${fmtNum(e.sum, n.dec)}</b>${t ? ` / ${t.type === 'max' ? 'max. ' : ''}${fmtNum(t.value, n.dec)}` : ''} ${n.unit}</span>${t ? barHTML(p, { over: t.type === 'max' && p > 1, max: t.type === 'max' }) : ''}</div>`;
   };
   let body;
   if (S.nutView === 'gaps') {
@@ -1643,7 +1708,7 @@ function weekHTML() {
     ${kpi('Kalorien pro Tag', fmtNum(wc.kcal), 'kcal', deltaTxt(wc.kcal, wc.prevKcal))}
     ${kpi('Eiweiß pro Tag', fmtNum(wc.protein), 'g', deltaTxt(wc.protein, wc.prevProtein, 0, ' g'))}
     ${kpi('Stark verarbeitet', wc.nova4 == null ? '–' : Math.round(wc.nova4 * 100), wc.nova4 == null ? '' : '%', wc.nova4 == null || wc.prevNova4 == null ? 'Anteil deiner Einträge mit Nova 4' : deltaTxt(wc.nova4 * 100, wc.prevNova4 * 100, 0, ' Punkte'))}</div>`;
-  const often = wc.often.length ? `<ul class="often">${wc.often.slice(0, 5).map(r => `<li><div class="gtop"><span class="gname">${labelOf(r.key)}</span><span class="gval">${approxMark(r.approx)}Ø ${pctTxt(r.avgPct)}</span></div>
+  const often = wc.often.length ? `<ul class="often">${wc.often.slice(0, 5).map(r => `<li data-action="nut-info" data-key="${r.key}" role="button" tabindex="0" class="tap"><div class="gtop"><span class="gname">${labelOf(r.key)}</span><span class="gval">${approxMark(r.approx)}Ø ${pctTxt(r.avgPct)}</span></div>
       ${barHTML(r.avgPct)}<p class="grest">An ${r.below} von ${wc.days} Tagen unter dem Ziel${r.veryLow ? `, davon ${r.veryLow}-mal unter der Hälfte` : ''}.</p>${suggLine(r.key, targets[r.key], P)}</li>`).join('')}</ul>`
     : `<p class="done">${ICON.check}<span>Kein Nährstoff war an der Mehrheit der Tage zu niedrig.</span></p>`;
   const nd = wc.noData.length ? `<p class="foot">Keine Daten in dieser Woche zu: ${wc.noData.map(labelOf).join(', ')}.</p>` : '';
@@ -2064,6 +2129,27 @@ async function openMealMenu(meal) {
     <p class="secttl">Vorlage einfügen</p>${tpls ? `<div class="menu">${tpls}</div>` : '<p class="hint">Noch keine Vorlagen gespeichert.</p>'}`);
 }
 
+/* Infofenster zu einem Nährstoff */
+function openNutrientInfo(key, date = S.selected) {
+  const info = NUTRIENT_INFO[key] || { what: '', store: 'none' };
+  const n = NUTRIENTS.find(x => x.key === key); if (!n) return;
+  const tg = targetsFor(date)[key], day = getDay(date), tot = sumItems(day.items);
+  const wk = last7(date), avg = tg ? avgPct(wk, key, tg) : null;
+  const known = hasData(day.items, key);
+  const store = info.store === 'week' ? `<p class="done">${ICON.check}<span><b>Speichert der Körper.</b> Es zählt der Schnitt über mehrere Tage. Ein Tag mit wenig ist kein Problem.</span></p>`
+    : info.store === 'day' ? `<p class="warn" style="background:var(--surface2)">${ICON.today}<span><b>Kaum Vorrat im Körper.</b> Am besten jeden Tag etwas davon essen.</span></p>`
+    : info.store === 'max' ? `<p class="warn">${ICON.warn}<span><b>Hier gilt eine Obergrenze:</b> höchstens ${fmtNum(tg ? tg.value : 0, n.dec)} ${n.unit} pro Tag.</span></p>` : '';
+  const todayRow = tg ? `<div class="nrow"><span class="nn">${dateLabel(date) === dateLabel(todayStr()) ? 'Heute' : dateLabel(date)}</span><span class="nv">${known ? `<b>${fmtNum(tot[key].sum, n.dec)}</b> / ${fmtNum(tg.value, n.dec)} ${n.unit}` : 'keine Daten'}</span>${known ? barHTML(tot[key].sum / tg.value, { over: tg.type === 'max' && tot[key].sum > tg.value, max: tg.type === 'max' }) : ''}</div>` : '';
+  const avgRow = tg && avg != null ? `<div class="nrow"><span class="nn">Schnitt der letzten 7 Tage</span><span class="nv"><b>${pctTxt(avg)}</b> vom Ziel</span>${barHTML(avg, { over: tg.type === 'max' && avg > 1, max: tg.type === 'max' })}</div>` : '';
+  const src = GOOD_SOURCES[key] ? `<p class="secttl">Gute Quellen</p><p>${GOOD_SOURCES[key]}.</p>` : '';
+  const more = info.more ? `<p class="secttl">Gut zu wissen</p><p>${info.more}</p>` : '';
+  S.modal = { type: 'info', key };
+  $('#modal-root').innerHTML = modalShell(n.label, info.store === 'week' ? 'Wochenschnitt zählt' : info.store === 'day' ? 'Möglichst täglich' : '', `
+    <p style="font-size:1.05rem;margin-bottom:12px">${info.what}</p>${store}
+    ${todayRow || avgRow ? `<p class="secttl">Deine Werte</p>${todayRow}${avgRow}` : ''}
+    ${src}${more}<p class="foot">Allgemeine Infos, vereinfacht. Kein medizinischer Rat.</p>`);
+}
+
 /* Eintrag ansehen und ändern */
 function openEditItem(date, id) {
   const it = getDay(date).items.find(x => x.id === id); if (!it) return;
@@ -2315,6 +2401,7 @@ document.addEventListener('click', async e => {
       break;
     }
     case 'meal-menu': openMealMenu(el.dataset.meal); break;
+    case 'nut-info': openNutrientInfo(el.dataset.key, S.page === 'week' ? (weekDates(S.monday)[6] <= todayStr() ? weekDates(S.monday)[6] : todayStr()) : S.selected); break;
     case 'edit-item': openEditItem(el.dataset.date, el.dataset.id); break;
     case 'remove': {
       const { date, id } = el.dataset;
@@ -2493,7 +2580,10 @@ document.addEventListener('pointermove', e => {
 });
 document.addEventListener('focusin', e => { const h = e.target.closest && e.target.closest('.hit'); if (h) { const r = h.getBoundingClientRect(); showTip(h, r.left + r.width / 2, r.top + 20); } });
 document.addEventListener('focusout', e => { if (e.target.closest && e.target.closest('.hit')) tipEl().hidden = true; });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.modal) dismissModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.modal) dismissModal();
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role=button][data-action]')) { e.preventDefault(); e.target.click(); }
+});
 
 /* ---------------------------------------------------------------------
    Start
