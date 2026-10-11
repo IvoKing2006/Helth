@@ -1101,6 +1101,14 @@ const localStore = {
   async loadDay(date) { try { return normalizeDay(JSON.parse(localStorage.getItem('np:day:' + date))); } catch { return emptyDay(); } },
   async loadDays(dates) { return Promise.all(dates.map(d => this.loadDay(d))); },
   async saveDay(date, day) { localStorage.setItem('np:day:' + date, JSON.stringify(day)); },
+  async loadAllDays() {
+    const out = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('np:day:')) { try { out[k.slice(7)] = normalizeDay(JSON.parse(localStorage.getItem(k))); } catch { /* kaputter Tag wird übersprungen */ } }
+    }
+    return out;
+  },
   async loadProfile() { try { return JSON.parse(localStorage.getItem('np:profile')); } catch { return null; } },
   async saveProfile(p) { localStorage.setItem('np:profile', JSON.stringify(p)); },
   async loadLibrary() { try { return normLib(JSON.parse(localStorage.getItem('np:library'))); } catch { return emptyLib(); } },
@@ -1127,6 +1135,12 @@ const fbStore = {
     return dates.map(d => normalizeDay(val[d]));
   },
   async saveDay(date, day) { await fb.dbM.set(dbRef('days/' + date), clean(day)); },
+  async loadAllDays() {
+    const val = (await fb.dbM.get(dbRef('days'))).val() || {};
+    const out = {};
+    for (const d of Object.keys(val)) out[d] = normalizeDay(val[d]);
+    return out;
+  },
   async loadProfile() { const s = await fb.dbM.get(dbRef('profile')); return s.exists() ? s.val() : null; },
   async saveProfile(p) { await fb.dbM.set(dbRef('profile'), clean(p)); },
   async loadLibrary() { const s = await fb.dbM.get(dbRef('library')); return s.exists() ? normLib(s.val()) : emptyLib(); },
@@ -1159,6 +1173,25 @@ function updateLib(fn) {
   S.lib = normLib(l);
   renderAll(); refreshAddModal();
   return persistLib();
+}
+
+/* Ändert sich ein eigenes Lebensmittel, bekommen auch alle schon eingetragenen Einträge, Favoriten, Zuletzt gegessen und Vorlagen die neuen Werte */
+const FOOD_FIELDS = f => ({ name: f.name, brand: f.brand, per100: f.per100, nova: f.nova, nutri: f.nutri, incomplete: f.incomplete, portion: f.portion });
+async function propagateFood(food) {
+  let all;
+  try { all = await store.loadAllDays(); }
+  catch (e) { console.error(e); toast('Die alten Einträge konnten nicht aktualisiert werden. Prüfe deine Verbindung.'); return; }
+  let n = 0;
+  for (const date of new Set([...Object.keys(all), ...Object.keys(S.days)])) {
+    const day = S.days[date] || all[date];
+    if (!day || !day.items.some(it => it.kind !== 'supp' && it.source === 'custom' && it.refId === food.id)) continue;
+    const items = day.items.map(it => (it.kind !== 'supp' && it.source === 'custom' && it.refId === food.id) ? { ...it, ...FOOD_FIELDS(food) } : it);
+    S.days[date] = normalizeDay({ ...day, items });
+    n++;
+    await persistDay(date);
+  }
+  renderAll();
+  if (n) toast(`Auch die alten Einträge an ${n} ${n === 1 ? 'Tag' : 'Tagen'} sind aktualisiert.`);
 }
 
 async function loadDates(dates) {
@@ -2246,7 +2279,14 @@ document.addEventListener('submit', async e => {
     const nova = Number(data.nova) >= 1 && Number(data.nova) <= 4 ? Number(data.nova) : null;
     const food = { id: data.id || uid(), source: 'custom', name, brand: String(data.brand || '').trim(), code: '', per100: per, nova, nutri: null, incomplete: [], portion: portion ? Math.round(portion) : null };
     closeModal();
-    await updateLib(l => { const i = l.custom.findIndex(x => x.id === food.id); if (i >= 0) l.custom[i] = food; else l.custom.push(food); });
+    const isEdit = !!data.id;
+    await updateLib(l => {
+      const i = l.custom.findIndex(x => x.id === food.id); if (i >= 0) l.custom[i] = food; else l.custom.push(food);
+      if (!isEdit) return;
+      for (const k of ['favorites', 'recent']) l[k] = l[k].map(x => x.source === 'custom' && x.id === food.id ? { ...x, ...FOOD_FIELDS(food) } : x);
+      l.templates = l.templates.map(t => ({ ...t, items: toArr(t.items).map(x => x.ref && x.ref.source === 'custom' && x.ref.id === food.id ? { ...x, ref: { ...x.ref, ...FOOD_FIELDS(food) } } : x) }));
+    });
+    if (isEdit) await propagateFood(food);
   } else if (kind === 'supp-editor') {
     const name = String(data.name || '').trim(), unit = String(data.unit || '').trim();
     if (!name || !unit) { showFormError(f, 'Gib Name und Einheit ein.'); return; }
