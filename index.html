@@ -318,20 +318,67 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 .shoplist .amt{color:var(--muted);white-space:nowrap;font-weight:650}
 
 /* Mehr */
-.libsec{margin-top:18px}
-.libsec:first-child{margin-top:0}
-.libsec .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
-.libsec h3{font-size:1rem;font-weight:750}
-.librow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
-.librow .iname{flex:1 1 200px;min-width:0}
-.librow .acts{display:flex;gap:6px}
 .iname strong{font-weight:650;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
 .ibrand{color:var(--muted);font-size:.85rem;display:block}
 .pgrid{display:grid;gap:4px 14px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
-.calc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
-.calc div{background:var(--surface2);border-radius:14px;padding:10px 12px}
-.calc b{display:block;font-size:1.3rem;font-weight:850;font-stretch:118%}
-.calc span{color:var(--muted);font-size:.82rem}
+.me-seg{display:flex;width:100%}
+.me-seg button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px}
+.me-seg svg{width:18px;height:18px}
+.me-hero{padding:20px 18px 0;overflow:hidden}
+.me-who{display:flex;align-items:center;gap:14px}
+.me-who .t{min-width:0}
+.me-who h2{font-size:1.2rem}
+.me-who .chips{margin-top:7px}
+.avatar{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--primary);color:var(--on-primary)}
+.avatar svg{width:25px;height:25px}
+.goals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:18px -18px 0;border-top:1px solid var(--line)}
+.goal{padding:14px 12px 16px;min-width:0}
+.goal:first-child{padding-left:18px}
+.goal:last-child{padding-right:18px}
+.goal + .goal{border-left:1px solid var(--line)}
+.goal .gl{display:flex;align-items:center;gap:7px;font-size:.8rem;font-weight:650;color:var(--muted)}
+.goal .gl i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c)}
+.goal .gn{display:block;margin-top:8px;font-size:clamp(1.35rem,5.6vw,2rem);line-height:1.05;font-weight:850;font-stretch:122%;letter-spacing:-.02em}
+.goal .gs{display:block;margin-top:5px;font-size:.78rem;line-height:1.3;color:var(--muted)}
+@media(min-width:520px){.goal{padding:16px 18px 18px}}
+.libgrid{display:grid;gap:14px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media(min-width:1100px){.libgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ctitle{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.ctitle .ct{flex:1;min-width:0}
+.ctitle h2{font-size:1.08rem}
+.ctitle .sub{display:block;color:var(--muted);font-size:.84rem;line-height:1.35;margin-top:2px}
+.cico{flex:none;width:40px;height:40px;border-radius:13px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 16%,var(--surface))}
+.cico svg{width:22px;height:22px}
+.cnt{font-weight:800;font-stretch:115%;color:var(--muted)}
+@media(max-width:480px){.cnt{display:none}.ctitle h2{font-size:1rem}}
+.pgrid.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px}
+.pgrid.three .withunit input{padding-right:42px;padding-left:10px}
+.pgrid.three .withunit em{right:10px;font-size:.8rem}
+.librow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.libcard .ctitle + .librow{margin-top:8px}
+.librow .iname{min-width:0}
+.librow .acts{display:flex;gap:2px}
+.thumb.ico{background:color-mix(in srgb,var(--c) 16%,var(--surface))}
+.thumb.ico::before{content:none}
+.thumb.ico svg{width:22px;height:22px;color:var(--c)}
+.icon-btn.danger{color:var(--danger)}
+.emptybox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;margin-top:10px;padding:14px 16px;border:1.5px dashed var(--line);border-radius:16px;color:var(--muted);font-size:.92rem}
+.emptybox svg{width:28px;height:28px;color:var(--c)}
+.pills{display:flex;gap:8px}
+.pills .pill{position:relative;flex:1}
+.pills .pill input{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
+.pills .pill span{display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface2);font-weight:650;color:var(--muted);transition:background .15s,color .15s}
+.pills .pill input:checked + span{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.pills .pill input:focus-visible + span{outline:3px solid var(--focus);outline-offset:2px}
+.field .withunit input{width:100%;padding-right:58px}
+.btn.wide{width:100%;justify-content:center}
+.steps{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:12px;counter-reset:st}
+.steps li{display:flex;gap:12px;align-items:center;line-height:1.35}
+.steps li::before{counter-increment:st;content:counter(st);flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);font-weight:800;font-size:.88rem;font-stretch:115%}
+.acct{display:flex;align-items:center;gap:12px}
+.acct .who{flex:1;min-width:0;display:grid}
+.acct .who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct .who span{font-size:.85rem}
 
 /* Bottom-Sheet */
 .overlay{position:fixed;inset:0;background:rgba(5,9,14,.55);z-index:10;animation:fadeIn .18s ease-out}
@@ -1473,6 +1520,13 @@ const ICON = {
   pencil: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 7l3 3" stroke="currentColor" stroke-width="2"/></svg>',
   user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.1 6.4 6.4 2.1-6.4 2.1L12 19.5l-2.1-6.4L3.5 11l6.4-2.1z" fill="currentColor"/></svg>',
+  tpl: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17.5" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 9h6M9 13h6M9 17h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  food: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.2c-1.9-1.6-6-1.2-6 3.5 0 3.9 2.1 8.3 4.3 8.3 1.1 0 1.2-.5 1.7-.5s.6.5 1.7.5c2.2 0 4.3-4.4 4.3-8.3 0-4.7-4.1-5.1-6-3.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8c0-2 1-3.4 2.6-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  pot: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11h14v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 11h18M9 7.5c0-1.2 1-1.7 1-2.8M14 7.5c0-1.2 1-1.7 1-2.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  pill: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-40 12 12)"><rect x="3" y="8.5" width="18" height="7" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v7" stroke="currentColor" stroke-width="2"/></g></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l.8 12h8.4L17 7M10.5 11v5M13.5 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.8" width="10" height="18.4" rx="2.6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5A2 2 0 0 1 7 3h12v14H7a2 2 0 0 0-2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M5 19a2 2 0 0 0 2 2h12v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
   logo: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--energy)" stroke-width="5" stroke-linecap="round" stroke-dasharray="94 120" transform="rotate(-90 24 24)"/><circle cx="24" cy="24" r="12" fill="none" stroke="var(--protein)" stroke-width="5" stroke-linecap="round" stroke-dasharray="52 76" transform="rotate(-90 24 24)"/><circle cx="24" cy="24" r="5" fill="var(--micro)"/></svg>'
 };
 
@@ -1842,7 +1896,10 @@ function shopHTML() {
 /* ---------------------------------------------------------------------
    Seite: Mehr (Bibliothek, Profil)
    --------------------------------------------------------------------- */
+/* Farbe und Symbol pro Bereich */
+const LIB_STYLE = { tpl: ['var(--text)', 'tpl'], food: ['var(--micro)', 'food'], recipe: ['var(--energy)', 'pot'], supp: ['var(--protein)', 'pill'], fav: ['var(--nova3)', 'star'] };
 function libRowHTML(it, kind) {
+  const c = LIB_STYLE[kind][0];
   let meta;
   if (kind === 'supp') {
     const ks = ['protein', ...MICRO_KEYS].filter(k => num(it.perUnit && it.perUnit[k]) > 0).slice(0, 4);
@@ -1853,52 +1910,73 @@ function libRowHTML(it, kind) {
     const p = it.per100 || {};
     meta = `<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span><span class="chip">pro 100 g</span>${kind === 'recipe' ? `<span class="chip">${(it.ingredients || []).length} Zutaten</span>` : ''}${novaPill(it.nova)}`;
   }
-  const edit = (kind === 'fav' || kind === 'tpl') ? '' : `<button class="btn small" data-action="lib-edit" data-kind="${kind}" data-id="${esc(it.id)}">Bearbeiten</button>`;
-  const del = kind === 'fav' ? `<button class="btn small danger" data-action="fav-remove" data-key="${esc(foodKey(it))}">Entfernen</button>`
-    : `<button class="btn small danger" data-action="lib-delete" data-kind="${kind}" data-id="${esc(it.id)}">Löschen</button>`;
+  const btn = (action, attrs, label, icon, cls = '') => `<button class="icon-btn sm ${cls}" data-action="${action}" ${attrs} title="${label}" aria-label="${esc(it.name)}: ${label}">${icon}</button>`;
+  const edit = (kind === 'fav' || kind === 'tpl') ? '' : btn('lib-edit', `data-kind="${kind}" data-id="${esc(it.id)}"`, 'Bearbeiten', ICON.pencil);
+  const del = kind === 'fav' ? btn('fav-remove', `data-key="${esc(foodKey(it))}"`, 'Aus Favoriten entfernen', ICON.close)
+    : btn('lib-delete', `data-kind="${kind}" data-id="${esc(it.id)}"`, 'Löschen', ICON.trash, 'danger');
   const details = kind === 'tpl' ? `<span class="ibrand">${it.items.map(x => esc(x.ref.name)).join(', ')}</span>` : (it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : '');
-  return `<div class="librow">${kind === 'tpl' ? '' : thumbHTML(it)}<div class="iname"><strong>${esc(it.name)}</strong>${details}<div class="chips">${meta}</div></div><div class="acts">${edit}${del}</div></div>`;
+  const thumb = kind === 'tpl' ? `<span class="thumb md ico" aria-hidden="true">${ICON.tpl}</span>` : thumbHTML(it, 'md');
+  return `<div class="librow" style="--c:${c}">${thumb}<div class="iname"><strong>${esc(it.name)}</strong>${details}<div class="chips">${meta}</div></div><div class="acts">${edit}${del}</div></div>`;
 }
 function libHTML() {
   const foods = S.lib.custom.filter(x => x.source === 'custom'), recipes = S.lib.custom.filter(x => x.source === 'recipe');
-  const sec = (title, kind, list, newLabel, hint) => `<div class="libsec"><div class="head"><h3>${title}</h3>${newLabel ? `<button class="btn small" data-action="lib-new" data-kind="${kind}">${ICON.plus} ${newLabel}</button>` : ''}</div>
-    ${list.length ? list.map(x => libRowHTML(x, kind)).join('') : `<p class="hint">${hint}</p>`}</div>`;
-  return `<section class="card">
+  const sec = (title, kind, list, newLabel, hint) => {
+    const [c, ico] = LIB_STYLE[kind];
+    return `<section class="card libcard" style="--c:${c}"><div class="ctitle"><span class="cico">${ICON[ico]}</span><div class="ct"><h2>${title}</h2></div>${list.length ? `<span class="cnt">${list.length}</span>` : ''}${newLabel ? `<button class="btn small primary" data-action="lib-new" data-kind="${kind}">${ICON.plus} ${newLabel}</button>` : ''}</div>
+    ${list.length ? list.map(x => libRowHTML(x, kind)).join('') : `<div class="emptybox">${ICON[ico]}<p>${hint}</p></div>`}</section>`;
+  };
+  return `<div class="libgrid">
     ${sec('Mahlzeit-Vorlagen', 'tpl', S.lib.templates, '', 'Speichere eine Mahlzeit über „⋯“ neben Frühstück, Mittag oder Abend als Vorlage. Dann trägst du sie mit einem Tipp wieder ein.')}
     ${sec('Eigene Lebensmittel', 'food', foods, 'Neu', 'Für Essen, das in keiner Datenbank steht, zum Beispiel ein Gericht aus dem Restaurant.')}
     ${sec('Rezepte', 'recipe', recipes, 'Neu', 'Ein Rezept besteht aus Zutaten. Die App rechnet daraus die Werte pro 100 g aus.')}
     ${sec('Nahrungsergänzung', 'supp', S.lib.supplements, 'Neu', 'Tabletten, Kapseln oder Pulver mit ihren Inhaltsstoffen pro Stück.')}
-    ${sec('Favoriten', 'fav', S.lib.favorites, '', 'Mit dem Stern merkst du dir Essen für später.')}</section>`;
+    ${sec('Favoriten', 'fav', S.lib.favorites, '', 'Mit dem Stern merkst du dir Essen für später.')}</div>`;
+}
+/* Übersicht oben: deine Tagesziele, so wie die App sie aus dem Profil berechnet */
+function meHeroHTML() {
+  const ep = effProfile(todayStr()), kt = kcalTarget(ep), tg = computeTargets(ep);
+  const goal = (GOALS.find(g => g.id === ep.goal) || GOALS[1]).label;
+  const chips = [ep.sex === 'w' ? 'Weiblich' : 'Männlich', ep.age ? `${fmtNum(ep.age)} Jahre` : '', ep.height ? `${fmtNum(ep.height)} cm` : '', ep.weight ? `${fmtNum(ep.weight, 1)} kg` : '', goal]
+    .filter(Boolean).map(c => `<span class="chip">${esc(c)}</span>`).join('');
+  const goalHTML = (c, label, val, sub) => `<div class="goal" style="--c:${c}"><span class="gl"><i></i>${label}</span><b class="gn">${val}</b><span class="gs">${sub}</span></div>`;
+  return `<section class="card me-hero"><div class="me-who"><span class="avatar">${ICON.user}</span><div class="t"><h2>Deine Tagesziele</h2><div class="chips">${chips}</div></div></div>
+    <div class="goals">
+      ${goalHTML('var(--energy)', 'Kalorien', kt ? fmtNum(kt) : '–', kt ? 'kcal pro Tag, ohne Sport' : 'Alter und Größe fehlen')}
+      ${goalHTML('var(--protein)', 'Eiweiß', fmtNum(tg.protein.value), `g pro Tag bei ${fmtNum(ep.weight, 1)} kg`)}
+      ${goalHTML('var(--nova3)', 'Gesättigt', fmtNum(tg.satfat.value, 1), `g Fett höchstens, ${Math.round(SATFAT_SHARE * 100)} % der Kalorien`)}
+    </div></section>`;
 }
 function profileHTML() {
-  const p = S.profile, ep = effProfile(todayStr());
-  const kt = kcalTarget(ep), tg = computeTargets(ep);
+  const p = S.profile;
   const opt = (list, cur, key = 'v') => list.map(x => `<option value="${x[key]}" ${String(x[key]) === String(cur) ? 'selected' : ''}>${x.label}</option>`).join('');
   const installed = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  return `<section class="card"><h2>Profil</h2><p class="hint">Daraus berechnet die App deinen Kalorienbedarf und deine Richtwerte.</p>
-    <form data-form="settings">
-      <fieldset class="field"><legend>Geschlecht</legend><div class="radios">
-        <label><input type="radio" name="sex" value="m" ${p.sex !== 'w' ? 'checked' : ''}> Männlich</label>
-        <label><input type="radio" name="sex" value="w" ${p.sex === 'w' ? 'checked' : ''}> Weiblich</label></div></fieldset>
-      <div class="pgrid">
-        <div class="field"><label for="pa">Alter</label><input id="pa" name="age" inputmode="numeric" value="${esc(p.age ?? '')}" placeholder="z. B. 19"></div>
-        <div class="field"><label for="ph">Größe in cm</label><input id="ph" name="height" inputmode="numeric" value="${esc(p.height ?? '')}" placeholder="z. B. 180"></div>
-        <div class="field"><label for="pw">Gewicht in kg</label><input id="pw" name="weight" inputmode="decimal" value="${esc(fmtNum(p.weight, 1))}" required></div>
+  const hd = (icon, c, title, sub) => `<div class="ctitle" style="--c:${c}"><span class="cico">${icon}</span><div class="ct"><h2>${title}</h2>${sub ? `<span class="sub">${sub}</span>` : ''}</div></div>`;
+  return `<div class="cols"><div class="col"><section class="card">${hd(ICON.user, 'var(--micro)', 'Körperdaten', 'Daraus berechnet die App deinen Kalorienbedarf und deine Richtwerte.')}
+    <form data-form="settings" style="margin-top:14px">
+      <fieldset class="field"><legend>Geschlecht</legend><div class="pills">
+        <label class="pill"><input type="radio" name="sex" value="m" ${p.sex !== 'w' ? 'checked' : ''}><span>Männlich</span></label>
+        <label class="pill"><input type="radio" name="sex" value="w" ${p.sex === 'w' ? 'checked' : ''}><span>Weiblich</span></label></div></fieldset>
+      <div class="pgrid three">
+        <div class="field"><label for="pa">Alter</label><span class="withunit"><input id="pa" name="age" inputmode="numeric" value="${esc(p.age ?? '')}" placeholder="19"><em>Jahre</em></span></div>
+        <div class="field"><label for="ph">Größe</label><span class="withunit"><input id="ph" name="height" inputmode="numeric" value="${esc(p.height ?? '')}" placeholder="180"><em>cm</em></span></div>
+        <div class="field"><label for="pw">Gewicht</label><span class="withunit"><input id="pw" name="weight" inputmode="decimal" value="${esc(fmtNum(p.weight, 1))}" required><em>kg</em></span></div>
       </div>
       <div class="field"><label for="pact">Alltag ohne Sport</label><select id="pact" name="activity">${opt(ACTIVITY, p.activity)}</select></div>
-      <div class="pgrid"><div class="field"><label for="pgoal">Ziel</label><select id="pgoal" name="goal">${opt(GOALS, p.goal || 'keep', 'id')}</select></div>
-        <div class="field"><label for="pprot">Eiweiß</label><select id="pprot" name="proteinPerKg">${opt(PROTEIN_LEVELS, p.proteinPerKg || 0.8)}</select></div></div>
-      <button class="btn primary" type="submit">Speichern</button>
+      <div class="field"><label for="pgoal">Ziel</label><select id="pgoal" name="goal">${opt(GOALS, p.goal || 'keep', 'id')}</select></div>
+      <div class="field"><label for="pprot">Eiweiß</label><select id="pprot" name="proteinPerKg">${opt(PROTEIN_LEVELS, p.proteinPerKg || 0.8)}</select></div>
+      <button class="btn primary wide" type="submit">Speichern</button>
     </form>
-    <div class="calc"><div><b>${kt ? fmtNum(kt) + ' kcal' : '–'}</b><span>${kt ? 'Kalorienziel pro Tag, ohne Sport' : 'Für ein Kalorienziel fehlen Alter oder Größe'}</span></div><div><b>${fmtNum(tg.protein.value)} g</b><span>Eiweißziel pro Tag bei ${fmtNum(ep.weight, 1)} kg</span></div></div>
-    <p class="foot">Der Bedarf ist eine Schätzung (Mifflin-St Jeor) und kein medizinischer Rat. Hast du an einem Tag dein Gewicht eingetragen, nutzt die App das neueste davon.</p></section>
-    <section class="card"><h2>Als App aufs iPhone</h2>${installed ? '<p class="done">' + ICON.check + '<span>Läuft schon als App.</span></p>' : `<p class="hint">Öffne diese Seite in Safari, tippe unten auf das Teilen-Symbol (Quadrat mit Pfeil) und dann auf „Zum Home-Bildschirm“. Danach startet sie wie eine App, ohne Browserleiste. In der App musst du dich einmal neu anmelden.</p>`}</section>
-    ${S.mode === 'firebase' ? `<section class="card"><h2>Konto</h2><p class="hint">Angemeldet als ${esc(S.user && S.user.email || '')}. Deine Daten liegen in deiner Firebase-Datenbank.</p><button class="btn" data-action="logout">Abmelden</button></section>` : ''}`;
+    <p class="foot">Der Bedarf ist eine Schätzung (Mifflin-St Jeor) und kein medizinischer Rat. Hast du an einem Tag dein Gewicht eingetragen, nutzt die App das neueste davon.</p></section></div>
+    <div class="col"><section class="card">${hd(ICON.phone, 'var(--protein)', 'Als App aufs iPhone', '')}
+      ${installed ? `<p class="done">${ICON.check}<span>Läuft schon als App.</span></p>` : `<ol class="steps"><li><span>Öffne diese Seite in Safari.</span></li><li><span>Tippe unten auf das Teilen-Symbol (Quadrat mit Pfeil).</span></li><li><span>Wähle „Zum Home-Bildschirm“.</span></li></ol>
+      <p class="foot">Danach startet sie wie eine App, ohne Browserleiste. In der App musst du dich einmal neu anmelden.</p>`}</section>
+    ${S.mode === 'firebase' ? `<section class="card"><div class="acct"><span class="avatar">${ICON.user}</span><div class="who"><b>${esc(S.user && S.user.email || '')}</b><span class="muted">Deine Daten liegen in deiner Firebase-Datenbank.</span></div></div><button class="btn wide" style="margin-top:14px" data-action="logout">Abmelden</button></section>` : ''}</div></div>`;
 }
 function moreHTML() {
   return `<div class="weekbar"><div class="t"><b>Mehr</b><span>Bibliothek und Profil · Version ${APP_VERSION}</span></div></div>
-    <div class="seg" role="group" aria-label="Bereich" style="margin-bottom:14px"><button data-action="more-tab" data-v="lib" aria-pressed="${S.more === 'lib'}">Bibliothek</button><button data-action="more-tab" data-v="profile" aria-pressed="${S.more === 'profile'}">Profil</button></div>
-    <div class="stack">${S.more === 'profile' ? profileHTML() : libHTML()}</div>`;
+    <div class="stack">${meHeroHTML()}
+      <div class="seg me-seg" role="group" aria-label="Bereich"><button data-action="more-tab" data-v="lib" aria-pressed="${S.more === 'lib'}">${ICON.book} Bibliothek</button><button data-action="more-tab" data-v="profile" aria-pressed="${S.more === 'profile'}">${ICON.user} Profil</button></div>
+      ${S.more === 'profile' ? profileHTML() : libHTML()}</div>`;
 }
 
 /* ---------------------------------------------------------------------
