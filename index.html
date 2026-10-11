@@ -1207,38 +1207,35 @@ async function fetchJson(url, ms = 15000) {
 }
 const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade,image_front_small_url,image_small_url,image_front_url';
 
-/* Suche bei Open Food Facts: zuerst der neue Suchdienst (Search-a-licious), sonst die alte Suche.
-   Open Food Facts erlaubt höchstens 10 Suchen pro Minute, deshalb werden Ergebnisse gemerkt. */
+/* Suche bei Open Food Facts über /cgi/search.pl (erlaubt Anfragen von fremden Webseiten).
+   Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
+   Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
+   und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
 const offCache = new Map();
-async function searchSAL(q) {
-  const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&langs=de,en&page_size=20&fields=${OFF_FIELDS}`;
-  const data = await fetchJson(url, 8000);
-  const hits = Array.isArray(data && data.hits) ? data.hits : [];
-  return hits.map(h => fromOFF({ ...h, brands: Array.isArray(h.brands) ? h.brands.join(', ') : h.brands })).filter(Boolean);
-}
-async function searchPL(q) {
-  const base = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${OFF_FIELDS}`;
-  let data = await fetchJson(base + '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany', 20000);
-  if (!(data.products || []).length) data = await fetchJson(base, 20000);
-  return (data.products || []).map(fromOFF).filter(Boolean);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function fetchJsonRetry(url, ms) {
+  try { return await fetchJson(url, ms); }
+  catch (e) {
+    const transient = !e.status || e.status >= 500 || e.status === 429;
+    if (!transient || e.name === 'AbortError') throw e;
+    await sleep(1500);
+    return await fetchJson(url, ms);
+  }
 }
 async function searchOFF(q) {
   const key = q.trim().toLowerCase();
   if (offCache.has(key)) return offCache.get(key);
-  let res = [], salError = null;
-  try { res = await searchSAL(q); } catch (e) { salError = e; console.warn('Neuer Suchdienst nicht erreichbar, nehme die alte Suche', e); }
-  if (!res.length) {
-    try { res = await searchPL(q); }
-    catch (e) { if (salError && !e.status) e.status = salError.status; throw e; }
-  }
+  const base = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${OFF_FIELDS}`;
+  let data = await fetchJsonRetry(base + '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany', 20000);
+  if (!(data.products || []).length) data = await fetchJsonRetry(base, 20000);
+  const res = (data.products || []).map(fromOFF).filter(Boolean);
   offCache.set(key, res);
   return res;
 }
 function offErrorText(e) {
-  if (e && (e.status === 429 || e.status === 503)) return 'Open Food Facts lässt gerade keine weiteren Suchen zu. Sie erlauben höchstens 10 Suchen pro Minute, und zu Stoßzeiten ist der Server oft überlastet. Warte eine Minute und such dann noch einmal.';
-  if (e && e.name === 'AbortError') return 'Open Food Facts hat zu lange gebraucht. Versuch es gleich noch einmal oder scanne den Barcode, das geht über einen anderen, schnelleren Weg.';
-  if (e && e.status) return `Open Food Facts hat mit einem Fehler geantwortet (Code ${e.status}). Versuch es gleich noch einmal.`;
-  return 'Open Food Facts ist gerade nicht erreichbar. Prüf deine Internetverbindung. Falls ein Werbeblocker läuft, kann auch der die Suche blockieren.';
+  if (e && e.name === 'AbortError') return 'Die Suche von Open Food Facts hat zu lange gebraucht. Versuch es gleich noch einmal.';
+  if (e && (e.status === 429 || e.status === 503 || !e.status)) return 'Die Suche von Open Food Facts hat nicht geantwortet. Das passiert, wenn deren Server überlastet ist oder in kurzer Zeit viele Suchen kamen (erlaubt sind 10 pro Minute). Warte eine Minute und such dann noch einmal. Der Barcode-Scan läuft über einen anderen Weg und geht meistens trotzdem.';
+  return `Open Food Facts hat mit einem Fehler geantwortet (Code ${e.status}). Versuch es gleich noch einmal.`;
 }
 async function lookupOFF(code) {
   const data = await fetchJson(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`);
