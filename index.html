@@ -1211,6 +1211,8 @@ const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_gro
    Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
    Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
    und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
+const APP_VERSION = '4.3';
+const OFF_FIELDS_BASIC = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
 const offCache = new Map();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function fetchJsonRetry(url, ms) {
@@ -1225,8 +1227,17 @@ async function fetchJsonRetry(url, ms) {
 async function searchOFF(q) {
   const key = q.trim().toLowerCase();
   if (offCache.has(key)) return offCache.get(key);
-  const base = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${OFF_FIELDS}`;
-  let data = await fetchJsonRetry(base + '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany', 20000);
+  const mk = fields => `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${fields}`;
+  const de = '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany';
+  let base = mk(OFF_FIELDS), data;
+  try { data = await fetchJson(base + de, 20000); }
+  catch (e) {
+    if (e.name === 'AbortError' || (e.status && e.status < 500 && e.status !== 429)) throw e;
+    console.warn('Suche mit Bildfeldern fehlgeschlagen, versuche es ohne', e);
+    await sleep(1200);
+    base = mk(OFF_FIELDS_BASIC);
+    data = await fetchJsonRetry(base + de, 20000);
+  }
   if (!(data.products || []).length) data = await fetchJsonRetry(base, 20000);
   const res = (data.products || []).map(fromOFF).filter(Boolean);
   offCache.set(key, res);
@@ -1681,7 +1692,7 @@ function profileHTML() {
     ${S.mode === 'firebase' ? `<section class="card"><h2>Konto</h2><p class="hint">Angemeldet als ${esc(S.user && S.user.email || '')}. Deine Daten liegen in deiner Firebase-Datenbank.</p><button class="btn" data-action="logout">Abmelden</button></section>` : ''}`;
 }
 function moreHTML() {
-  return `<div class="weekbar"><div class="t"><b>Mehr</b><span>Bibliothek und Profil</span></div></div>
+  return `<div class="weekbar"><div class="t"><b>Mehr</b><span>Bibliothek und Profil · Version ${APP_VERSION}</span></div></div>
     <div class="seg" role="group" aria-label="Bereich" style="margin-bottom:14px"><button data-action="more-tab" data-v="lib" aria-pressed="${S.more === 'lib'}">Bibliothek</button><button data-action="more-tab" data-v="profile" aria-pressed="${S.more === 'profile'}">Profil</button></div>
     <div class="stack">${S.more === 'profile' ? profileHTML() : libHTML()}</div>`;
 }
@@ -1698,7 +1709,7 @@ function shellHTML() {
   return `<div class="shell">
     <aside class="side"><div class="brand">${ICON.logo}<span>Nährstoff-Planer</span></div>${nav('navbtn').join('')}
       <button class="btn primary" data-action="add">${ICON.plus} Essen eintragen</button>
-      <p class="side-foot">${S.mode === 'firebase' ? esc(S.user && S.user.email || '') : 'Testmodus'}</p></aside>
+      <p class="side-foot">${S.mode === 'firebase' ? esc(S.user && S.user.email || '') : 'Testmodus'}<br>Version ${APP_VERSION}</p></aside>
     <main class="main">${note}${body}</main>
     <nav class="tabbar" aria-label="Bereiche">${tn[0]}${tn[1]}<button class="fab" data-action="add" aria-label="Essen eintragen">${ICON.plus}</button>${tn[2]}${tn[3]}</nav></div>`;
 }
