@@ -1,0 +1,20 @@
+{
+  "name": "Nährstoff-Planer",
+  "short_name": "Nährstoffe",
+  "description": "Essen eintragen und sehen, welche Vitamine und Nährstoffe dir fehlen.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0C131B",
+  "theme_color": "#0C131B",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
