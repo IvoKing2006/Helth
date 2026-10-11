@@ -1,0 +1,1810 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nährstoff-Planer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F0; --card:#FFFFFF; --ink:#1B2A3A; --muted:#5B6B79; --line:#D6DEE2; --track:#E4EAED;
+  --leaf:#2F7D5B; --amber:#D49A12; --beet:#B3445F; --focus:#2563EB;
+  font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+.center{text-align:center;padding:48px 16px;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* Kopfzeile */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin-bottom:14px}
+.brand{font-weight:800;font-size:1.4rem;letter-spacing:-.02em}
+.nav{display:flex;flex-wrap:wrap;gap:4px}
+.nav button{background:transparent;border:0;padding:8px 14px;border-radius:8px;font-weight:600;color:var(--muted)}
+.nav button:hover{background:#fff;color:var(--ink)}
+.nav button[aria-current="page"]{background:var(--ink);color:#fff}
+.btn{border:0;border-radius:8px;background:var(--ink);color:#fff;padding:9px 16px;font-weight:600}
+.btn:hover{background:#2A3E54}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.ghost:hover{background:#fff;border-color:var(--ink)}
+.btn.small{padding:6px 12px;font-size:.9rem}
+.btn.icon{padding:6px 10px;min-width:38px}
+.btn.danger{background:transparent;color:var(--beet);border:1.5px solid var(--line)}
+.btn.danger:hover{border-color:var(--beet);background:#fff}
+.note{background:#FFF7DB;border:1px solid #EBD58A;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.92rem}
+.weekbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+.weeklabel{font-weight:600;min-width:14ch;text-align:center}
+
+/* Plan */
+.layout{display:grid;gap:16px}
+@media(min-width:980px){
+  .layout{grid-template-columns:minmax(0,1fr) 440px;align-items:start}
+  .eval{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+}
+.strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.tile{background:var(--card);border:1.5px solid transparent;border-radius:12px;padding:8px 2px;text-align:center;display:grid;gap:1px;line-height:1.2}
+.tile:hover{border-color:var(--line)}
+.tile.sel{border-color:var(--ink)}
+.tile .wd{color:var(--muted);font-size:.8rem}
+.tile .dn{font-weight:800;font-size:1.15rem}
+.tile.today .dn{text-decoration:underline;text-underline-offset:3px}
+.tile .tk{font-size:.74rem;color:var(--muted);min-height:1.1em}
+.detail{background:var(--card);border-radius:14px;padding:14px 16px}
+.detail-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.detail-head h2{font-size:1.25rem;font-weight:700}
+.empty{color:var(--muted);font-size:.95rem;margin-top:10px}
+.meal h3{display:flex;justify-content:space-between;gap:8px;font-size:.95rem;font-weight:700;margin:16px 0 2px;padding-bottom:4px;border-bottom:1.5px solid var(--ink)}
+.meal h3 .mk{font-weight:500;color:var(--muted)}
+.items{list-style:none;margin:0;padding:0}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"time name qty act";gap:4px 10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.it-time{grid-area:time}.it-name{grid-area:name;min-width:0}.it-qty{grid-area:qty}.it-act{grid-area:act;display:flex}
+@media(max-width:600px){
+  .item{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"name name act" "time qty qty"}
+}
+.time{width:100px;padding:4px 6px;border:1.5px solid var(--line);border-radius:6px;background:#fff}
+.linkish{background:none;border:0;padding:0;text-align:left;display:block;max-width:100%}
+.linkish:hover strong{text-decoration:underline}
+.it-name strong{font-weight:600;overflow-wrap:anywhere}
+.ibrand{color:var(--muted);font-size:.85rem;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.chip{border-radius:4px;padding:1px 7px;font-size:.78rem;font-weight:600;background:var(--track);color:var(--ink)}
+.chip.nova1{background:var(--leaf);color:#fff}
+.chip.nova2{background:#6FA85A;color:#fff}
+.chip.nova3{background:var(--amber);color:#1B2A3A}
+.chip.nova4{background:var(--beet);color:#fff}
+.chip.ns-a{background:#1F8A4C;color:#fff}
+.chip.ns-b{background:#6AA83A;color:#fff}
+.chip.ns-c{background:#E8B91C}
+.chip.ns-d{background:#E8872C}
+.chip.ns-e{background:#D23F31;color:#fff}
+.gram{display:flex;align-items:center;gap:4px;color:var(--muted)}
+.gram input{width:78px;padding:5px 6px;border:1.5px solid var(--line);border-radius:6px;text-align:right;background:#fff}
+.x{background:none;border:0;font-size:1.3rem;line-height:1;color:var(--muted);padding:4px 8px;border-radius:6px}
+.x:hover{color:var(--beet);background:var(--track)}
+.x.star{font-size:1.15rem}
+.x.star[aria-pressed="true"]{color:var(--amber)}
+.x.star:hover{color:var(--amber)}
+.block{margin-top:18px;border-top:1.5px solid var(--line);padding-top:12px}
+.block h3,.block summary{font-size:.95rem;font-weight:700}
+.block summary{cursor:pointer}
+.waterrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:6px 0}
+.wval b{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+.wbtns{display:flex;flex-wrap:wrap;gap:6px}
+.hint{color:var(--muted);font-size:.88rem;margin:4px 0 8px}
+.inline-form{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:8px 0}
+.inline-form .field{margin:0}
+.sport-list{list-style:none;margin:8px 0;padding:0}
+.sport-list li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line)}
+
+/* Auswertung */
+.eval{background:var(--card);border-radius:14px;padding:16px}
+.eval-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.eval h2{font-size:1.2rem;font-weight:700}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:#fff;border:0;padding:5px 14px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:12px}
+.kcal{font-size:2.3rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.kcal small{font-size:1rem;font-weight:500;color:var(--muted);letter-spacing:0}
+.group h3{font-size:.95rem;font-weight:700;margin:18px 0 6px;padding-bottom:4px;border-bottom:1.5px solid var(--ink)}
+.nrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.nname{font-weight:500}
+.nval{text-align:right;color:var(--muted);font-size:.92rem;white-space:nowrap}
+.nval b{color:var(--ink);font-size:1.05rem;font-weight:700}
+.bar{grid-column:1/-1;position:relative;height:9px;border-radius:5px;background:var(--track);margin-top:3px}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.fill.ok{background:var(--leaf)}
+.fill.mid{background:var(--amber)}
+.fill.low{background:var(--beet)}
+.fill.neutral{background:var(--ink)}
+.tick{position:absolute;left:66.667%;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:1px}
+.gap{grid-column:1/-1;font-size:.8rem;color:var(--muted)}
+.nova-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--track);margin:6px 0}
+.nova-bar span{display:block;height:100%}
+.legend{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:3px;font-size:.88rem}
+.legend li{display:flex;align-items:center;gap:8px}
+.dot{width:11px;height:11px;border-radius:3px;flex:none}
+.foot{color:var(--muted);font-size:.82rem;margin-top:16px}
+
+/* Seiten */
+.page{background:var(--card);border-radius:14px;padding:16px}
+.page-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.page-head h2{font-size:1.25rem;font-weight:700}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+select,.input{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff}
+.chart{width:100%;height:auto;display:block;transition:opacity .15s}
+.chart.loading{opacity:.5}
+.chart text{font-family:inherit}
+.hit{fill:transparent;cursor:default}
+.hit:hover,.hit:focus{fill:rgba(27,42,58,.06);outline:none}
+.stats{display:flex;flex-wrap:wrap;gap:18px;margin:10px 0}
+.stat b{display:block;font-size:1.4rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.stat span{color:var(--muted);font-size:.85rem}
+details.tbl summary{cursor:pointer;font-weight:600;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem;margin-top:8px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.tip{position:fixed;z-index:30;background:var(--ink);color:#fff;padding:6px 10px;border-radius:8px;font-size:.88rem;pointer-events:none;max-width:70vw}
+.shoplist{list-style:none;margin:0;padding:0}
+.shoplist li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.shoplist li:first-child{border-top:0}
+.shoplist label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+.shoplist input[type=checkbox]{width:20px;height:20px;flex:none}
+.shoplist .done span.nm{text-decoration:line-through;color:var(--muted)}
+.shoplist .amt{color:var(--muted);white-space:nowrap}
+.libsec{margin-bottom:22px}
+.libsec h3{font-size:1.05rem;font-weight:700;margin-bottom:2px}
+.librow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.librow .iname{flex:1 1 220px;min-width:0}
+.librow .acts{display:flex;gap:6px}
+.libsec .head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(27,42,58,.5);z-index:10}
+.sheet{position:fixed;z-index:11;background:#fff;display:flex;flex-direction:column;inset:0;border-radius:0}
+@media(min-width:700px){.sheet{inset:5vh auto auto 50%;transform:translateX(-50%);width:680px;max-height:90vh;border-radius:16px}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sheet-head h2{font-size:1.15rem;font-weight:700}
+.sheet-body{padding:14px 16px;overflow:auto;flex:1}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tabs button{background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:7px 14px;font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.row{display:flex;gap:8px;margin-bottom:10px}
+.row input{flex:1;min-width:0;padding:9px 12px;border:1.5px solid var(--line);border-radius:8px}
+.results{list-style:none;margin:0;padding:0}
+#results h3{font-size:.95rem;margin:14px 0 4px}
+.res{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.res .iname{min-width:0}
+.res.picked{background:#EAF3EE;margin:0 -8px;padding:8px}
+.resact{display:flex;align-items:center;gap:2px;flex:none}
+#reader{width:100%;max-width:360px;margin:0 auto 10px}
+.pending{border-top:1px solid var(--line);padding:12px 16px;background:#F7F9F9;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pending .pname{flex:1 1 100%;font-weight:600;overflow-wrap:anywhere}
+.pending select,.pending input[type=time]{padding:8px;border:1.5px solid var(--line);border-radius:8px;background:#fff}
+.field{display:grid;gap:4px;margin-bottom:12px}
+.field label,.field legend{font-weight:600;font-size:.92rem}
+.field input,.field select{padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;width:100%;background:#fff}
+fieldset.field{border:0;padding:0;margin:0 0 14px}
+.radios{display:flex;gap:16px}
+.radios input{width:auto}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 10px;margin-top:8px}
+.fgrid .field{margin-bottom:6px}
+.fgrid label{font-weight:500;font-size:.85rem}
+details.fd{border-top:1px solid var(--line);padding:8px 0}
+details.fd summary{cursor:pointer;font-weight:700}
+.error{color:var(--beet);font-weight:500;margin-bottom:10px}
+.ing{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.ing .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.preview{background:#F3F6F5;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:.92rem}
+.auth{max-width:380px;margin:12vh auto;background:#fff;border-radius:16px;padding:24px}
+.auth h1{font-size:1.5rem;font-weight:800;margin-bottom:4px}
+.auth p{color:var(--muted);margin-bottom:16px}
+.link{background:none;border:0;color:var(--ink);text-decoration:underline;padding:0;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;z-index:40;max-width:90vw}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="tip" class="tip" role="tooltip" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script type="module">
+/* =====================================================================
+   KONFIGURATION
+   1) Firebase: Projekt anlegen, "Authentication" (E-Mail/Passwort) und
+      "Realtime Database" aktivieren, dann die Web-App-Daten hier eintragen.
+      Die databaseURL steht oben auf der Seite "Realtime Database", zum Beispiel
+      https://DEIN_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app
+      Solange hier "DEIN" steht, läuft die App im Testmodus (nur Browser).
+   2) USDA: kostenlosen Schlüssel holen unter https://fdc.nal.usda.gov/api-key-signup
+      (DEMO_KEY funktioniert, hat aber ein sehr kleines Tageslimit).
+   3) Regeln der Realtime Database (damit jeder nur seine eigenen Daten sieht):
+      {
+        "rules": {
+          "users": {
+            "$uid": {
+              ".read": "$uid === auth.uid",
+              ".write": "$uid === auth.uid"
+            }
+          }
+        }
+      }
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDtzirq0BuDqa8-TmuStqmLDnNpG3l5YNQ",
+  authDomain: "health-45f80.firebaseapp.com",
+  databaseURL: "https://health-45f80-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "health-45f80",
+  appId: "1:676711657322:web:181b9006c52566d4ad3f13"
+};
+const USDA_API_KEY = "DEMO_KEY";
+const FIREBASE_VERSION = "10.14.1";
+const SCAN_LIB = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+const FIREBASE_MISSING = ['apiKey', 'databaseURL', 'projectId', 'appId'].filter(k => !FIREBASE_CONFIG[k] || String(FIREBASE_CONFIG[k]).startsWith('DEIN'));
+const FIREBASE_READY = FIREBASE_MISSING.length === 0;
+
+/* PURE:START  (Logik ohne Browser-Abhängigkeit, wird separat getestet) */
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; };
+const mondayOf = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+const weekDates = monday => Array.from({ length: 7 }, (_, i) => fmtDate(addDays(monday, i)));
+const num = x => { if (x === null || x === undefined || x === '') return null; const n = Number(x); return Number.isFinite(n) ? n : null; };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+/* Die Realtime Database speichert Listen als Objekte mit Zahlen-Schlüsseln und lässt leere Listen weg. */
+const toArr = x => Array.isArray(x) ? x
+  : (x && typeof x === 'object' ? Object.keys(x).sort((a, b) => Number(a) - Number(b)).map(k => x[k]) : []);
+/* Schlüssel in der Realtime Database dürfen kein . $ # [ ] / enthalten und höchstens 768 Byte lang sein */
+const shopKey = (week, key) => week + '|' + encodeURIComponent(String(key)).replace(/\./g, '%2E').slice(0, 200);
+
+/* Zahl aus Eingabefeld: leer -> null, ungültig -> NaN, Komma oder Punkt erlaubt */
+function parseDecimal(s) {
+  if (s === null || s === undefined) return null;
+  const t = String(s).trim().replace(',', '.');
+  if (t === '') return null;
+  if (!/^(\d+\.?\d*|\.\d+)$/.test(t)) return NaN;
+  return Number(t);
+}
+
+const MEALS = [
+  { id: 'fruehstueck', label: 'Frühstück', def: '08:00' },
+  { id: 'mittag', label: 'Mittagessen', def: '12:30' },
+  { id: 'abend', label: 'Abendessen', def: '18:30' },
+  { id: 'snack', label: 'Snacks', def: '15:30' },
+  { id: 'erg', label: 'Nahrungsergänzung', def: '08:00' }
+];
+const mealForTime = t => {
+  const m = /^(\d\d):(\d\d)$/.exec(t || ''); if (!m) return 'snack';
+  const x = Number(m[1]) * 60 + Number(m[2]);
+  if (x < 10 * 60 + 30) return 'fruehstueck';
+  if (x < 14 * 60 + 30) return 'mittag';
+  if (x < 17 * 60) return 'snack';
+  if (x < 21 * 60) return 'abend';
+  return 'snack';
+};
+
+const WATER_TARGET = 1500;
+const NUTRIENTS = [
+  { key: 'protein', label: 'Eiweiß', unit: 'g', group: 'Makronährstoffe', dec: 0 },
+  { key: 'fat', label: 'Fett', unit: 'g', group: 'Makronährstoffe', dec: 0 },
+  { key: 'carbs', label: 'Kohlenhydrate', unit: 'g', group: 'Makronährstoffe', dec: 0 },
+  { key: 'sugar', label: 'davon Zucker', unit: 'g', group: 'Makronährstoffe', dec: 0 },
+  { key: 'fiber', label: 'Ballaststoffe', unit: 'g', group: 'Makronährstoffe', dec: 0, ref: { m: 30, w: 30 } },
+  { key: 'salt', label: 'Salz', unit: 'g', group: 'Makronährstoffe', dec: 1, ref: { m: 6, w: 6 }, type: 'max' },
+  { key: 'satfat', label: 'Gesättigte Fette', unit: 'g', group: 'Fette und mehr', dec: 1 },
+  { key: 'chol', label: 'Cholesterin', unit: 'mg', group: 'Fette und mehr', dec: 0 },
+  { key: 'omega3', label: 'Omega-3-Fettsäuren', unit: 'g', group: 'Fette und mehr', dec: 2 },
+  { key: 'caffeine', label: 'Koffein', unit: 'mg', group: 'Fette und mehr', dec: 0, ref: { m: 400, w: 400 }, type: 'max' },
+  { key: 'vitA', label: 'Vitamin A', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 1000, w: 800 } },
+  { key: 'vitC', label: 'Vitamin C', unit: 'mg', group: 'Vitamine', dec: 0, ref: { m: 110, w: 95 } },
+  { key: 'vitD', label: 'Vitamin D', unit: 'µg', group: 'Vitamine', dec: 1, ref: { m: 20, w: 20 } },
+  { key: 'vitE', label: 'Vitamin E', unit: 'mg', group: 'Vitamine', dec: 1, ref: { m: 15, w: 12 } },
+  { key: 'vitK', label: 'Vitamin K', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 70, w: 60 } },
+  { key: 'b1', label: 'Vitamin B1', unit: 'mg', group: 'Vitamine', dec: 2, ref: { m: 1.2, w: 1.0 } },
+  { key: 'b2', label: 'Vitamin B2', unit: 'mg', group: 'Vitamine', dec: 2, ref: { m: 1.4, w: 1.1 } },
+  { key: 'b3', label: 'Niacin (B3)', unit: 'mg', group: 'Vitamine', dec: 1, ref: { m: 16, w: 13 } },
+  { key: 'b5', label: 'Pantothensäure (B5)', unit: 'mg', group: 'Vitamine', dec: 1, ref: { m: 6, w: 6 } },
+  { key: 'b6', label: 'Vitamin B6', unit: 'mg', group: 'Vitamine', dec: 2, ref: { m: 1.6, w: 1.4 } },
+  { key: 'b7', label: 'Biotin (B7)', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 40, w: 40 } },
+  { key: 'b9', label: 'Folat (B9)', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 300, w: 300 } },
+  { key: 'b12', label: 'Vitamin B12', unit: 'µg', group: 'Vitamine', dec: 1, ref: { m: 4, w: 4 } },
+  { key: 'ca', label: 'Calcium', unit: 'mg', group: 'Mineralstoffe', dec: 0, ref: { m: 1000, w: 1000 } },
+  { key: 'fe', label: 'Eisen', unit: 'mg', group: 'Mineralstoffe', dec: 1, ref: { m: 10, w: 15 } },
+  { key: 'mg', label: 'Magnesium', unit: 'mg', group: 'Mineralstoffe', dec: 0, ref: { m: 350, w: 300 } },
+  { key: 'zn', label: 'Zink', unit: 'mg', group: 'Mineralstoffe', dec: 1, ref: { m: 11, w: 7 } },
+  { key: 'k', label: 'Kalium', unit: 'mg', group: 'Mineralstoffe', dec: 0, ref: { m: 4000, w: 4000 } },
+  { key: 'se', label: 'Selen', unit: 'µg', group: 'Mineralstoffe', dec: 0, ref: { m: 70, w: 60 } },
+  { key: 'i', label: 'Jod', unit: 'µg', group: 'Mineralstoffe', dec: 0, ref: { m: 200, w: 200 } },
+  { key: 'p', label: 'Phosphor', unit: 'mg', group: 'Mineralstoffe', dec: 0, ref: { m: 700, w: 700 } },
+  { key: 'cu', label: 'Kupfer', unit: 'mg', group: 'Mineralstoffe', dec: 2, ref: { m: 1.25, w: 1.25 } },
+  { key: 'mn', label: 'Mangan', unit: 'mg', group: 'Mineralstoffe', dec: 1, ref: { m: 2, w: 2 } }
+];
+const GROUPS = ['Makronährstoffe', 'Fette und mehr', 'Vitamine', 'Mineralstoffe'];
+const ALL_KEYS = ['kcal', ...NUTRIENTS.map(n => n.key)];
+const MICRO_KEYS = NUTRIENTS.filter(n => n.group === 'Vitamine' || n.group === 'Mineralstoffe').map(n => n.key);
+const labelOf = k => k === 'kcal' ? 'Kalorien' : (NUTRIENTS.find(n => n.key === k) || { label: k }).label;
+
+function computeTargets(p) {
+  const sex = p && p.sex === 'w' ? 'w' : 'm';
+  const w = p && Number(p.weight) > 0 ? Number(p.weight) : (sex === 'm' ? 75 : 60);
+  const out = {};
+  for (const n of NUTRIENTS) {
+    if (n.key === 'protein') out.protein = { value: Math.round(0.8 * w), type: 'min' };
+    else if (n.ref) out[n.key] = { value: n.ref[sex], type: n.type || 'min' };
+  }
+  return out;
+}
+
+/* Open Food Facts liefert Vitamine/Mineralstoffe in Gramm pro 100 g -> in mg bzw. µg umrechnen */
+const OFF_MAP = {
+  kcal: ['energy-kcal', 1], protein: ['proteins', 1], fat: ['fat', 1], carbs: ['carbohydrates', 1],
+  sugar: ['sugars', 1], fiber: ['fiber', 1],
+  satfat: ['saturated-fat', 1], chol: ['cholesterol', 1e3], omega3: ['omega-3-fat', 1], caffeine: ['caffeine', 1e3],
+  vitA: ['vitamin-a', 1e6], vitC: ['vitamin-c', 1e3], vitD: ['vitamin-d', 1e6], vitE: ['vitamin-e', 1e3],
+  vitK: ['vitamin-k', 1e6], b1: ['vitamin-b1', 1e3], b2: ['vitamin-b2', 1e3], b3: ['vitamin-pp', 1e3],
+  b5: ['pantothenic-acid', 1e3], b6: ['vitamin-b6', 1e3], b7: ['biotin', 1e6], b9: ['vitamin-b9', 1e6],
+  b12: ['vitamin-b12', 1e6],
+  ca: ['calcium', 1e3], fe: ['iron', 1e3], mg: ['magnesium', 1e3], zn: ['zinc', 1e3],
+  k: ['potassium', 1e3], se: ['selenium', 1e6], i: ['iodine', 1e6],
+  p: ['phosphorus', 1e3], cu: ['copper', 1e3], mn: ['manganese', 1e3]
+};
+
+function fromOFF(p) {
+  if (!p) return null;
+  const nu = p.nutriments || {};
+  const per100 = {};
+  for (const [k, [key, mult]] of Object.entries(OFF_MAP)) {
+    const v = num(nu[key + '_100g']);
+    per100[k] = v === null ? null : v * mult;
+  }
+  if (per100.kcal === null) { const kj = num(nu['energy_100g']); if (kj !== null) per100.kcal = kj / 4.184; }
+  const salt = num(nu['salt_100g']);
+  if (salt !== null) per100.salt = salt;
+  else { const na = num(nu['sodium_100g']); per100.salt = na === null ? null : na * 2.5; }
+  const name = String(p.product_name_de || p.product_name || '').trim();
+  if (!name) return null;
+  if (per100.kcal === null && per100.protein === null) return null;
+  const nova = num(p.nova_group);
+  const grade = String(p.nutriscore_grade || '').toLowerCase();
+  return {
+    source: 'off', code: String(p.code || ''), name,
+    brand: String(p.brands || '').split(',')[0].trim(),
+    per100, nova: nova >= 1 && nova <= 4 ? nova : null,
+    nutri: ['a', 'b', 'c', 'd', 'e'].includes(grade) ? grade : null
+  };
+}
+
+const USDA_MAP = {
+  protein: ['203'], fat: ['204'], carbs: ['205'], sugar: ['269', '269.3'], fiber: ['291'],
+  satfat: ['606'], chol: ['601'], caffeine: ['262'],
+  vitA: ['320'], vitC: ['401'], vitD: ['328'], vitE: ['323'], vitK: ['430'],
+  b1: ['404'], b2: ['405'], b3: ['406'], b5: ['410'], b6: ['415'], b7: ['416'], b9: ['417', '435'], b12: ['418'],
+  ca: ['301'], fe: ['303'], mg: ['304'], zn: ['309'], k: ['306'], se: ['317'], i: ['314'],
+  p: ['305'], cu: ['312'], mn: ['315']
+};
+const USDA_OMEGA3 = ['619', '629', '621', '631'];   // ALA, EPA, DHA, DPA (g pro 100 g)
+
+function fromUSDA(f) {
+  if (!f || !f.description) return null;
+  const byNo = {};
+  for (const n of (f.foodNutrients || [])) {
+    const no = String(n.nutrientNumber ?? '');
+    const v = num(n.value);
+    if (no && v !== null) byNo[no] = { v, unit: String(n.unitName || '').toUpperCase() };
+  }
+  const per100 = {};
+  for (const [k, nos] of Object.entries(USDA_MAP)) {
+    const hit = nos.map(no => byNo[no]).find(Boolean);
+    per100[k] = hit ? hit.v : null;
+  }
+  const o3 = USDA_OMEGA3.map(no => byNo[no]).filter(Boolean);
+  per100.omega3 = o3.length ? o3.reduce((a, e) => a + e.v, 0) : null;
+  const kc = ['208', '957', '958'].map(no => byNo[no]).find(e => e && e.unit === 'KCAL');
+  per100.kcal = kc ? kc.v : null;
+  per100.salt = byNo['307'] ? byNo['307'].v * 2.5 / 1000 : null;
+  if (per100.kcal === null && per100.protein === null) return null;
+  return {
+    source: 'usda', code: String(f.fdcId || ''), name: String(f.description).trim(),
+    brand: '', per100, nova: null, nutri: null
+  };
+}
+
+const DE_EN = {
+  'hähnchen': 'chicken', 'hühnchen': 'chicken', 'huhn': 'chicken', 'hähnchenbrust': 'chicken breast',
+  'hühnerbrust': 'chicken breast', 'pute': 'turkey', 'putenbrust': 'turkey breast', 'rind': 'beef',
+  'rindfleisch': 'beef', 'hackfleisch': 'ground beef', 'schwein': 'pork', 'schweinefleisch': 'pork',
+  'schinken': 'ham', 'lachs': 'salmon', 'thunfisch': 'tuna', 'forelle': 'trout', 'garnelen': 'shrimp',
+  'ei': 'egg', 'eier': 'egg', 'milch': 'milk', 'joghurt': 'yogurt', 'quark': 'cottage cheese',
+  'käse': 'cheese', 'mozzarella': 'mozzarella', 'feta': 'feta', 'butter': 'butter', 'sahne': 'cream',
+  'reis': 'rice', 'vollkornreis': 'brown rice', 'nudeln': 'pasta', 'haferflocken': 'oats',
+  'hafer': 'oats', 'brot': 'bread', 'vollkornbrot': 'whole wheat bread', 'brötchen': 'roll',
+  'mehl': 'flour', 'kartoffel': 'potato', 'kartoffeln': 'potato', 'süßkartoffel': 'sweet potato',
+  'tomate': 'tomatoes', 'tomaten': 'tomatoes', 'gurke': 'cucumber', 'paprika': 'sweet peppers',
+  'karotte': 'carrots', 'karotten': 'carrots', 'möhre': 'carrots', 'möhren': 'carrots',
+  'brokkoli': 'broccoli', 'spinat': 'spinach', 'salat': 'lettuce', 'zwiebel': 'onions',
+  'zwiebeln': 'onions', 'knoblauch': 'garlic', 'pilze': 'mushrooms', 'champignons': 'mushrooms',
+  'zucchini': 'zucchini', 'blumenkohl': 'cauliflower', 'kürbis': 'pumpkin', 'avocado': 'avocados',
+  'apfel': 'apples', 'banane': 'bananas', 'orange': 'oranges', 'erdbeeren': 'strawberries',
+  'blaubeeren': 'blueberries', 'himbeeren': 'raspberries', 'trauben': 'grapes', 'zitrone': 'lemon',
+  'birne': 'pears', 'mandeln': 'almonds', 'walnüsse': 'walnuts', 'erdnüsse': 'peanuts',
+  'erdnussbutter': 'peanut butter', 'cashews': 'cashew nuts', 'linsen': 'lentils',
+  'kichererbsen': 'chickpeas', 'bohnen': 'beans', 'erbsen': 'peas', 'tofu': 'tofu', 'mais': 'corn',
+  'quinoa': 'quinoa', 'couscous': 'couscous', 'olivenöl': 'olive oil', 'honig': 'honey',
+  'zucker': 'sugar', 'schokolade': 'chocolate', 'roh': 'raw', 'gekocht': 'cooked', 'gebraten': 'fried',
+  'kaffee': 'coffee', 'tee': 'tea', 'wasser': 'water', 'bier': 'beer', 'wein': 'wine'
+};
+function translateQuery(q) {
+  return String(q).toLowerCase().split(/\s+/).filter(Boolean).map(w => DE_EN[w] ?? w).join(' ');
+}
+
+/* Menge eines Eintrags: Lebensmittel in Gramm (Werte pro 100 g), Ergänzungen in Stück (Werte pro Stück) */
+const itemFactor = it => it.kind === 'supp' ? (Number(it.qty) || 0) : (Number(it.grams) || 0) / 100;
+const valuesOf = it => it.kind === 'supp' ? (it.perUnit || {}) : (it.per100 || {});
+
+function sumItems(items) {
+  const tot = {};
+  for (const k of ALL_KEYS) tot[k] = { sum: 0, missing: 0, n: 0 };
+  for (const it of items) {
+    const f = itemFactor(it), supp = it.kind === 'supp', vals = valuesOf(it), inc = it.incomplete || [];
+    for (const k of ALL_KEYS) {
+      const v = num(vals[k]);
+      tot[k].n++;
+      if (v === null) { if (!supp) tot[k].missing++; }          // Ergänzung: leer heißt "nicht enthalten"
+      else { tot[k].sum += v * f; if (!supp && inc.includes(k)) tot[k].missing++; }
+    }
+  }
+  return tot;
+}
+
+/* Durchschnitt pro Tag, gerechnet nur über Tage mit Einträgen */
+function averageDays(daysItems) {
+  const withData = daysItems.filter(a => a.length);
+  const res = {};
+  for (const k of ALL_KEYS) res[k] = { sum: 0, missing: 0, n: 0 };
+  for (const day of withData) {
+    const t = sumItems(day);
+    for (const k of ALL_KEYS) { res[k].sum += t[k].sum; res[k].missing += t[k].missing; res[k].n += t[k].n; }
+  }
+  if (withData.length) for (const k of ALL_KEYS) res[k].sum /= withData.length;
+  return { tot: res, days: withData.length };
+}
+
+function countNova(items) {
+  const c = { 1: 0, 2: 0, 3: 0, 4: 0, 0: 0 };
+  for (const it of items) { if (it.kind === 'supp') continue; c[it.nova >= 1 && it.nova <= 4 ? it.nova : 0]++; }
+  return c;
+}
+
+function mealTotals(items) {
+  const out = {};
+  for (const m of MEALS) out[m.id] = 0;
+  for (const it of items) {
+    if (it.kind === 'supp') continue;
+    const kc = num(valuesOf(it).kcal);
+    if (kc !== null && out[it.meal] !== undefined) out[it.meal] += kc * itemFactor(it);
+  }
+  return out;
+}
+
+function coverage(value, target) {
+  if (!target) return null;
+  const pct = value / target.value;
+  let cls;
+  if (target.type === 'max') cls = pct <= 1 ? 'ok' : 'low';
+  else cls = pct >= 1 ? 'ok' : pct >= 0.5 ? 'mid' : 'low';
+  return { pct, cls, fill: Math.min(pct, 1.5) / 1.5 * 100 };
+}
+
+/* ---- Einträge, Tage, Bibliothek ---- */
+function normItem(it) {
+  if (!it || typeof it !== 'object' || !it.name) return null;
+  const supp = it.kind === 'supp';
+  const out = {
+    ...it, id: it.id || uid(), kind: supp ? 'supp' : 'food',
+    meal: MEALS.some(m => m.id === it.meal) ? it.meal : (supp ? 'erg' : 'snack'),
+    time: /^\d\d:\d\d$/.test(it.time || '') ? it.time : ''
+  };
+  if (supp) { out.qty = Number(it.qty) || 0; out.perUnit = it.perUnit || {}; out.unit = it.unit || 'Stk'; }
+  else {
+    out.grams = Number(it.grams) || 0; out.per100 = it.per100 || {}; out.incomplete = toArr(it.incomplete);
+    if (it.ingredients) out.ingredients = toArr(it.ingredients);
+  }
+  return out;
+}
+const emptyDay = () => ({ items: [], water: 0, weight: null, sport: [] });
+function normalizeDay(raw) {
+  if (Array.isArray(raw)) return { ...emptyDay(), items: raw.map(normItem).filter(Boolean) };
+  if (!raw || typeof raw !== 'object') return emptyDay();
+  return {
+    items: toArr(raw.items).map(normItem).filter(Boolean),
+    water: Math.max(0, Number(raw.water) || 0),
+    weight: num(raw.weight),
+    sport: toArr(raw.sport).filter(s => s && s.name).map(s => ({
+      id: s.id || uid(), name: String(s.name), minutes: num(s.minutes), kcal: num(s.kcal)
+    }))
+  };
+}
+function sortItems(items) {
+  const mi = id => { const i = MEALS.findIndex(m => m.id === id); return i < 0 ? 99 : i; };
+  return items.map((it, i) => ({ it, i })).sort((a, b) =>
+    mi(a.it.meal) - mi(b.it.meal) ||
+    (a.it.time || '99:99').localeCompare(b.it.time || '99:99') || a.i - b.i).map(x => x.it);
+}
+const sumSport = sport => (sport || []).reduce((a, s) => a + (num(s.kcal) || 0), 0);
+
+const emptyLib = () => ({ custom: [], favorites: [], recent: [], supplements: [], shopChecked: {} });
+function normFoodRef(x) {
+  const out = { ...x };
+  if (x.per100 || 'incomplete' in x) out.incomplete = toArr(x.incomplete);
+  if ('ingredients' in x) out.ingredients = toArr(x.ingredients).filter(i => i && i.name).map(i => ({ ...i, incomplete: toArr(i.incomplete) }));
+  return out;
+}
+function normLib(raw) {
+  const l = emptyLib();
+  if (!raw || typeof raw !== 'object') return l;
+  for (const k of ['custom', 'favorites', 'recent', 'supplements']) l[k] = toArr(raw[k]).filter(x => x && x.name).map(normFoodRef);
+  l.shopChecked = raw.shopChecked && typeof raw.shopChecked === 'object' ? raw.shopChecked : {};
+  return l;
+}
+
+const foodKey = f => (f.source === 'custom' || f.source === 'recipe' || f.source === 'supp')
+  ? f.source + ':' + (f.id || f.name) : (f.source || 'x') + ':' + (f.code || f.name);
+
+function toFoodRef(it) {
+  if (it.kind === 'supp') return { source: 'supp', id: it.refId || '', name: it.name, unit: it.unit || 'Stk', perUnit: it.perUnit || {} };
+  const r = {
+    source: it.source, code: it.code || '', id: it.refId || '', name: it.name, brand: it.brand || '',
+    per100: it.per100 || {}, nova: it.nova ?? null, nutri: it.nutri ?? null, incomplete: it.incomplete || [],
+    portion: it.portion || null
+  };
+  if (it.ingredients) { r.ingredients = it.ingredients; r.recipeTotal = it.recipeTotal; }
+  return r;
+}
+function pushRecent(list, food, max = 20) {
+  const k = foodKey(food);
+  return [food, ...list.filter(x => foodKey(x) !== k)].slice(0, max);
+}
+
+function makeItem(food, qty, meal, time) {
+  const supp = food.source === 'supp';
+  const base = {
+    id: uid(), kind: supp ? 'supp' : 'food', name: food.name, brand: food.brand || '',
+    source: food.source, code: food.code || '', refId: food.id || '', meal, time: time || '',
+    nova: food.nova ?? null, nutri: food.nutri ?? null
+  };
+  if (supp) return { ...base, qty, unit: food.unit || 'Stk', perUnit: food.perUnit || {} };
+  const it = { ...base, grams: qty, per100: food.per100 || {}, incomplete: food.incomplete || [], portion: food.portion || null };
+  if (Array.isArray(food.ingredients) && food.ingredients.length) {
+    it.ingredients = food.ingredients.map(i => ({ name: i.name, source: i.source, code: i.code || '', grams: i.grams }));
+    it.recipeTotal = food.recipeTotal;
+  }
+  return it;
+}
+
+/* ---- Eigene Lebensmittel, Rezepte ---- */
+function parseValueFields(fields) {
+  const per = {}, bad = [];
+  for (const k of ALL_KEYS) {
+    const v = parseDecimal(fields[k]);
+    if (Number.isNaN(v)) bad.push(k); else per[k] = v;
+  }
+  return { per, bad };
+}
+function validateFood(per, mode) {
+  if (mode === 'per100') {
+    if (per.kcal == null && per.protein == null) return 'Gib mindestens Kalorien oder Eiweiß an.';
+    if ((per.protein || 0) + (per.fat || 0) + (per.carbs || 0) > 100.5) return 'Eiweiß, Fett und Kohlenhydrate zusammen können nicht über 100 g pro 100 g liegen.';
+    if (per.kcal != null && per.kcal > 900) return 'Mehr als 900 kcal pro 100 g gibt es bei Lebensmitteln nicht. Prüfe die Eingabe.';
+  } else if (ALL_KEYS.every(k => !per[k])) return 'Gib mindestens einen Nährstoff an.';
+  return '';
+}
+function computeRecipe(ings, totalGrams) {
+  const sumG = ings.reduce((a, i) => a + (Number(i.grams) || 0), 0);
+  const total = Number(totalGrams) > 0 ? Number(totalGrams) : sumG;
+  const per100 = {}, incomplete = [];
+  for (const k of ALL_KEYS) {
+    let sum = 0, known = 0, unknown = 0;
+    for (const i of ings) {
+      const f = (Number(i.grams) || 0) / 100;
+      const v = num(i.per100 && i.per100[k]);
+      if (v === null) unknown++;
+      else { sum += v * f; known++; if ((i.incomplete || []).includes(k)) unknown++; }
+    }
+    per100[k] = known && total > 0 ? sum / total * 100 : null;
+    if (known && unknown) incomplete.push(k);
+  }
+  return { per100, incomplete, total, sumG };
+}
+
+/* ---- Einkaufsliste ---- */
+function shoppingList(daysMap, dates, fromDate) {
+  const m = new Map();
+  const add = (key, name, grams) => {
+    if (!(grams > 0)) return;
+    const e = m.get(key) || { key, name, grams: 0 };
+    e.grams += grams; m.set(key, e);
+  };
+  for (const d of dates) {
+    if (fromDate && d < fromDate) continue;
+    const items = (daysMap[d] && daysMap[d].items) || [];
+    for (const it of items) {
+      if (it.kind === 'supp') continue;
+      const g = Number(it.grams) || 0;
+      if (g <= 0) continue;
+      if (Array.isArray(it.ingredients) && it.ingredients.length && it.recipeTotal > 0) {
+        const s = g / it.recipeTotal;
+        for (const ing of it.ingredients) add(foodKey(ing), ing.name, (Number(ing.grams) || 0) * s);
+      } else add(foodKey(it), it.name, g);
+    }
+  }
+  return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
+/* ---- Verlauf ---- */
+function seriesFor(metric, dates, days) {
+  return dates.map(date => {
+    const d = days[date]; let v = null;
+    if (d) {
+      if (metric === 'water') v = d.water > 0 ? d.water : null;
+      else if (metric === 'weight') v = d.weight;
+      else if (d.items.length) { const t = sumItems(d.items); v = t[metric] ? t[metric].sum : null; }
+    }
+    return { date, value: v };
+  });
+}
+function niceMax(v) {
+  if (!(v > 0)) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const f = v / p;
+  const n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  return n * p;
+}
+/* PURE:END */
+
+/* ---------------------------------------------------------------------
+   Hilfsfunktionen für die Oberfläche
+   --------------------------------------------------------------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtNum = (v, dec = 0) => v == null ? '–' : v.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: dec });
+const WD_LONG = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+const WD_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const MON = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+const dateLabel = s => { const d = parseDate(s); return `${WD_LONG[(d.getDay() + 6) % 7]}, ${d.getDate()}. ${MON[d.getMonth()]}`; };
+const shortDate = s => { const d = parseDate(s); return `${d.getDate()}.${d.getMonth() + 1}.`; };
+const todayStr = () => fmtDate(new Date());
+const mealLabel = id => (MEALS.find(m => m.id === id) || {}).label || '';
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3500);
+}
+
+/* ---------------------------------------------------------------------
+   Zustand und Speicher
+   --------------------------------------------------------------------- */
+const S = {
+  booting: true, mode: 'local', user: null, uid: null, initError: '', page: 'plan',
+  monday: mondayOf(new Date()), days: {}, selected: todayStr(), view: 'day',
+  profile: { sex: 'm', weight: 75 }, lib: emptyLib(),
+  hist: { metric: 'protein', range: 30, loading: false }, shopFromToday: true,
+  authMode: 'login', authError: '', modal: null, draft: null
+};
+const getDay = date => S.days[date] || emptyDay();
+const clean = x => JSON.parse(JSON.stringify(x));   // entfernt undefined, damit die Datenbank nichts ablehnt
+
+const localStore = {
+  async loadDay(date) { try { return normalizeDay(JSON.parse(localStorage.getItem('np:day:' + date))); } catch { return emptyDay(); } },
+  async loadDays(dates) { return Promise.all(dates.map(d => this.loadDay(d))); },
+  async saveDay(date, day) { localStorage.setItem('np:day:' + date, JSON.stringify(day)); },
+  async loadProfile() { try { return JSON.parse(localStorage.getItem('np:profile')); } catch { return null; } },
+  async saveProfile(p) { localStorage.setItem('np:profile', JSON.stringify(p)); },
+  async loadLibrary() { try { return normLib(JSON.parse(localStorage.getItem('np:library'))); } catch { return emptyLib(); } },
+  async saveLibrary(l) { localStorage.setItem('np:library', JSON.stringify(l)); }
+};
+
+let fb = null;
+async function initFirebase() {
+  const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/`;
+  const [appM, authM, dbM] = await Promise.all([
+    import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-database.js')
+  ]);
+  const app = appM.initializeApp(FIREBASE_CONFIG);
+  fb = { auth: authM.getAuth(app), db: dbM.getDatabase(app), authM, dbM };
+}
+const dbRef = path => fb.dbM.ref(fb.db, `users/${S.uid}/${path}`);
+const fbStore = {
+  /* Ein einziger Abruf für den ganzen Zeitraum, nach Datum (Schlüssel) sortiert */
+  async loadDays(dates) {
+    if (!dates.length) return [];
+    const sorted = [...dates].sort();
+    const q = fb.dbM.query(dbRef('days'), fb.dbM.orderByKey(), fb.dbM.startAt(sorted[0]), fb.dbM.endAt(sorted[sorted.length - 1]));
+    const val = (await fb.dbM.get(q)).val() || {};
+    return dates.map(d => normalizeDay(val[d]));
+  },
+  async saveDay(date, day) { await fb.dbM.set(dbRef('days/' + date), clean(day)); },
+  async loadProfile() { const s = await fb.dbM.get(dbRef('profile')); return s.exists() ? s.val() : null; },
+  async saveProfile(p) { await fb.dbM.set(dbRef('profile'), clean(p)); },
+  async loadLibrary() { const s = await fb.dbM.get(dbRef('library')); return s.exists() ? normLib(s.val()) : emptyLib(); },
+  async saveLibrary(l) { await fb.dbM.set(dbRef('library'), clean(l)); }
+};
+let store = localStore;
+
+/* Speichern in Reihenfolge pro Dokument, damit ein später gestarteter Speichervorgang nie von einem früheren überholt wird */
+const saveChains = {};
+function queueSave(id, fn) {
+  saveChains[id] = (saveChains[id] || Promise.resolve()).catch(() => { }).then(fn);
+  return saveChains[id];
+}
+async function persistDay(date) {
+  try { await queueSave('day:' + date, () => store.saveDay(date, getDay(date))); }
+  catch (e) { console.error(e); toast('Speichern fehlgeschlagen. Die Änderung ist nur hier sichtbar.'); }
+}
+async function persistLib() {
+  try { await queueSave('lib', () => store.saveLibrary(S.lib)); }
+  catch (e) { console.error(e); toast('Die Bibliothek konnte nicht gespeichert werden.'); }
+}
+function updateDay(date, fn) {
+  const d = clean(getDay(date)); fn(d);
+  S.days[date] = normalizeDay(d);
+  renderAll();
+  return persistDay(date);
+}
+function updateLib(fn) {
+  const l = clean(S.lib); fn(l);
+  S.lib = normLib(l);
+  renderAll(); refreshAddModal();
+  return persistLib();
+}
+
+async function loadDates(dates) {
+  const todo = dates.filter(d => !S.days[d]);
+  if (!todo.length) return;
+  const arr = await store.loadDays(todo);
+  todo.forEach((d, i) => { if (!S.days[d]) S.days[d] = arr[i]; });   // überschreibt keine Änderung, die du währenddessen gemacht hast
+}
+async function loadWeek(force = false) {
+  const dates = weekDates(S.monday);
+  if (force) dates.forEach(d => { delete S.days[d]; });
+  try { await loadDates(dates); }
+  catch (e) {
+    console.error(e); toast('Die Woche konnte nicht geladen werden. Prüfe deine Verbindung und die Regeln der Realtime Database.');
+    dates.forEach(d => { if (!S.days[d]) S.days[d] = emptyDay(); });
+  }
+}
+async function loadAll() {
+  try { const p = await store.loadProfile(); if (p) S.profile = { ...S.profile, ...p }; } catch (e) { console.error(e); }
+  try { S.lib = await store.loadLibrary(); } catch (e) { console.error(e); toast('Die Bibliothek konnte nicht geladen werden.'); }
+  await loadWeek();
+}
+
+/* ---------------------------------------------------------------------
+   Datenquellen
+   --------------------------------------------------------------------- */
+async function fetchJson(url, ms = 15000) {
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: c.signal });
+    if (!r.ok) { const err = new Error('HTTP ' + r.status); err.status = r.status; throw err; }
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
+
+async function searchOFF(q) {
+  const base = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${OFF_FIELDS}`;
+  const de = '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany';
+  let data = await fetchJson(base + de);
+  if (!(data.products || []).length) data = await fetchJson(base);
+  return (data.products || []).map(fromOFF).filter(Boolean);
+}
+async function lookupOFF(code) {
+  const data = await fetchJson(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`);
+  return data.status === 1 ? fromOFF(data.product) : null;
+}
+async function searchUSDA(q) {
+  const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(USDA_API_KEY)}&query=${encodeURIComponent(q)}&dataType=Foundation,SR%20Legacy&pageSize=20`;
+  const data = await fetchJson(url);
+  return (data.foods || []).map(fromUSDA).filter(Boolean);
+}
+
+/* ---------------------------------------------------------------------
+   Darstellung: Plan
+   --------------------------------------------------------------------- */
+function chipsFor(it) {
+  const c = [];
+  if (it.nova) c.push(`<span class="chip nova${it.nova}" title="Nova-Gruppe: 1 unverarbeitet bis 4 stark verarbeitet">Nova ${it.nova}</span>`);
+  if (it.nutri) c.push(`<span class="chip ns-${it.nutri}" title="Nutri-Score">Nutri-Score ${it.nutri.toUpperCase()}</span>`);
+  return c.join('');
+}
+const isFavRef = ref => S.lib.favorites.some(f => foodKey(f) === foodKey(ref));
+
+function itemRowHTML(it, date) {
+  const supp = it.kind === 'supp';
+  const qty = supp
+    ? `<label class="gram"><input type="number" min="0.5" max="50" step="0.5" value="${esc(it.qty)}" data-qty="${esc(it.id)}" data-date="${date}" aria-label="Menge für ${esc(it.name)}"> ${esc(it.unit)}</label>`
+    : `<label class="gram"><input type="number" min="1" max="5000" step="1" value="${esc(it.grams)}" data-qty="${esc(it.id)}" data-date="${date}" aria-label="Menge in Gramm für ${esc(it.name)}"> g</label>`;
+  const fav = isFavRef(toFoodRef(it));
+  return `<li class="item">
+    <input class="time it-time" type="time" value="${esc(it.time)}" data-time="${esc(it.id)}" data-date="${date}" aria-label="Uhrzeit für ${esc(it.name)}">
+    <div class="it-name"><button class="linkish" data-action="edit-item" data-date="${date}" data-id="${esc(it.id)}" title="Menge, Mahlzeit und Uhrzeit ändern"><strong>${esc(it.name)}</strong></button>${it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : ''}
+      <div class="chips">${chipsFor(it)}</div></div>
+    <div class="it-qty">${qty}</div>
+    <div class="it-act"><button class="x star" data-action="fav-item" data-date="${date}" data-id="${esc(it.id)}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten hinzufügen'}">${fav ? '★' : '☆'}</button>
+      <button class="x" data-action="remove" data-date="${date}" data-id="${esc(it.id)}" aria-label="${esc(it.name)} entfernen">×</button></div>
+  </li>`;
+}
+
+function stripHTML(dates) {
+  return `<div class="strip" role="group" aria-label="Tage der Woche">${dates.map(date => {
+    const d = parseDate(date), day = getDay(date), t = sumItems(day.items);
+    const sel = date === S.selected, today = date === todayStr();
+    const info = day.items.length ? `${fmtNum(t.kcal.sum)} kcal` : (day.water > 0 ? `${fmtNum(day.water)} ml` : '');
+    return `<button class="tile ${sel ? 'sel' : ''} ${today ? 'today' : ''}" data-action="select" data-date="${date}" aria-pressed="${sel}" aria-label="${dateLabel(date)}${today ? ', heute' : ''}">
+      <span class="wd">${WD_SHORT[(d.getDay() + 6) % 7]}</span><span class="dn">${d.getDate()}</span><span class="tk">${info}</span></button>`;
+  }).join('')}</div>`;
+}
+
+function dayDetailHTML(date) {
+  const day = getDay(date);
+  const items = sortItems(day.items);
+  const groups = MEALS.map(meal => {
+    const list = items.filter(it => it.meal === meal.id);
+    if (!list.length) return '';
+    const kc = list.reduce((a, it) => a + (it.kind === 'supp' ? 0 : (num(valuesOf(it).kcal) || 0) * itemFactor(it)), 0);
+    return `<section class="meal"><h3><span>${meal.label}</span>${meal.id !== 'erg' ? `<span class="mk">${fmtNum(kc)} kcal</span>` : ''}</h3>
+      <ul class="items">${list.map(it => itemRowHTML(it, date)).join('')}</ul></section>`;
+  }).join('');
+  const wcov = coverage(day.water, { value: WATER_TARGET, type: 'min' });
+  const sportList = day.sport.map(s => `<li><span>${esc(s.name)}${s.minutes ? `, ${fmtNum(s.minutes)} Min.` : ''}${s.kcal ? `, ${fmtNum(s.kcal)} kcal` : ''}</span>
+      <button class="x" data-action="sport-remove" data-date="${date}" data-id="${esc(s.id)}" aria-label="${esc(s.name)} entfernen">×</button></li>`).join('');
+  const hasBody = day.weight != null || day.sport.length > 0;
+  return `<section class="detail" aria-label="${dateLabel(date)}">
+    <div class="detail-head"><h2>${dateLabel(date)}</h2><button class="btn" data-action="add" data-date="${date}">Essen hinzufügen</button></div>
+    ${groups || '<p class="empty">Noch nichts eingetragen. Füge Essen hinzu, das du gegessen hast oder noch essen willst.</p>'}
+    <div class="block"><h3>Wasser</h3>
+      <div class="waterrow"><div class="wval"><b>${fmtNum(day.water)}</b> ml <span class="muted">von ${fmtNum(WATER_TARGET)} ml</span></div>
+        <div class="wbtns">
+          <button class="btn ghost small" data-action="water" data-date="${date}" data-ml="-200" aria-label="200 Milliliter weniger">−200</button>
+          <button class="btn ghost small" data-action="water" data-date="${date}" data-ml="200">+200</button>
+          <button class="btn ghost small" data-action="water" data-date="${date}" data-ml="330">+330</button>
+          <button class="btn ghost small" data-action="water" data-date="${date}" data-ml="500">+500</button></div></div>
+      <div class="bar" role="img" aria-label="${Math.round(wcov.pct * 100)} Prozent des Richtwerts"><div class="fill ${wcov.cls}" style="width:${wcov.fill.toFixed(1)}%"></div><div class="tick"></div></div>
+      <p class="hint">Getränke mit Kalorien wie Saft oder Cola trägst du oben als Essen ein.</p></div>
+    <details class="block" ${hasBody ? 'open' : ''}><summary>Gewicht und Sport</summary>
+      <form class="inline-form" data-form="weight"><div class="field"><label for="wt-${date}">Körpergewicht (kg)</label><input id="wt-${date}" name="weight" type="text" inputmode="decimal" value="${day.weight != null ? esc(String(day.weight).replace('.', ',')) : ''}" placeholder="z. B. 72,5"></div>
+        <input type="hidden" name="date" value="${date}"><button class="btn small" type="submit">Speichern</button></form>
+      <ul class="sport-list">${sportList}</ul>
+      <form class="inline-form" data-form="sport"><input type="hidden" name="date" value="${date}">
+        <div class="field"><label for="sn-${date}">Sport</label><input id="sn-${date}" name="name" type="text" placeholder="z. B. Joggen" required></div>
+        <div class="field"><label for="sm-${date}">Minuten</label><input id="sm-${date}" name="minutes" type="text" inputmode="decimal" placeholder="30" style="width:90px"></div>
+        <div class="field"><label for="sk-${date}">Verbrauch (kcal)</label><input id="sk-${date}" name="kcal" type="text" inputmode="decimal" placeholder="optional" style="width:110px"></div>
+        <button class="btn small" type="submit">Hinzufügen</button></form>
+    </details>
+  </section>`;
+}
+
+function nutrientRowHTML(n, t, target) {
+  const e = t[n.key];
+  const cov = coverage(e.sum, target);
+  const val = `<b>${fmtNum(e.sum, n.dec)}</b>${target ? ` / ${target.type === 'max' ? 'max. ' : ''}${fmtNum(target.value, n.dec)}` : ''} ${n.unit}`;
+  const gap = e.missing > 0 ? `<div class="gap">Bei ${e.missing} von ${e.n} Einträgen fehlt diese Angabe. Der echte Wert liegt vermutlich höher.</div>` : '';
+  const bar = cov ? `<div class="bar" role="img" aria-label="${Math.round(cov.pct * 100)} Prozent des Richtwerts"><div class="fill ${cov.cls}" style="width:${cov.fill.toFixed(1)}%"></div><div class="tick"></div></div>` : '';
+  return `<div class="nrow"><div class="nname">${n.label}</div><div class="nval">${val}</div>${bar}${gap}</div>`;
+}
+
+const NOVA_META = {
+  1: ['Nova 1, unverarbeitet', 'var(--leaf)'], 2: ['Nova 2, verarbeitete Zutaten', '#6FA85A'],
+  3: ['Nova 3, verarbeitet', 'var(--amber)'], 4: ['Nova 4, stark verarbeitet', 'var(--beet)'],
+  0: ['Keine Angabe', '#B9C3CA']
+};
+function novaHTML(items) {
+  const foods = items.filter(it => it.kind !== 'supp');
+  if (!foods.length) return '';
+  const c = countNova(foods);
+  const total = foods.length;
+  const segs = [1, 2, 3, 4, 0].filter(k => c[k]).map(k => `<span style="width:${c[k] / total * 100}%;background:${NOVA_META[k][1]}"></span>`).join('');
+  const legend = [1, 2, 3, 4, 0].filter(k => c[k]).map(k =>
+    `<li><span class="dot" style="background:${NOVA_META[k][1]}"></span>${NOVA_META[k][0]}: ${c[k]} von ${total}</li>`).join('');
+  return `<div class="group"><h3>Verarbeitungsgrad der Einträge</h3><div class="nova-bar" role="img" aria-label="Verteilung der Nova-Gruppen">${segs}</div><ul class="legend">${legend}</ul></div>`;
+}
+
+function mealsHTML(items, nDays) {
+  const mt = mealTotals(items);
+  const total = Object.values(mt).reduce((a, b) => a + b, 0);
+  if (!(total > 0)) return '';
+  const rows = MEALS.filter(m => mt[m.id] > 0).map(m => {
+    const v = mt[m.id] / nDays;
+    return `<div class="nrow"><div class="nname">${m.label}</div><div class="nval"><b>${fmtNum(v)}</b> kcal, ${Math.round(mt[m.id] / total * 100)} %</div>
+      <div class="bar" role="img" aria-label="${Math.round(mt[m.id] / total * 100)} Prozent der Kalorien"><div class="fill neutral" style="width:${(mt[m.id] / total * 100).toFixed(1)}%"></div></div></div>`;
+  }).join('');
+  return `<div class="group"><h3>Kalorien nach Mahlzeit</h3>${rows}</div>`;
+}
+
+function evalHTML() {
+  const targets = computeTargets(S.profile);
+  let tot, items, sub, water, sportLine = '', nDays = 1;
+  if (S.view === 'day') {
+    const day = getDay(S.selected);
+    items = day.items; tot = sumItems(items); sub = dateLabel(S.selected); water = day.water;
+    const sk = sumSport(day.sport);
+    if (sk > 0) sportLine = `<p class="sub" style="margin:2px 0 0">Sport verbraucht etwa ${fmtNum(sk)} kcal (deine Angabe).</p>`;
+  } else {
+    const days = weekDates(S.monday).map(getDay);
+    const a = averageDays(days.map(d => d.items));
+    tot = a.tot; items = days.flatMap(d => d.items); nDays = Math.max(1, a.days);
+    sub = `Durchschnitt pro Tag, ${a.days} von 7 Tagen mit Einträgen`;
+    const wd = days.filter(d => d.water > 0);
+    water = wd.length ? wd.reduce((s, d) => s + d.water, 0) / wd.length : 0;
+    const sk = days.reduce((s, d) => s + sumSport(d.sport), 0);
+    if (sk > 0) sportLine = `<p class="sub" style="margin:2px 0 0">Sport in dieser Woche: etwa ${fmtNum(sk)} kcal (deine Angaben).</p>`;
+  }
+  const head = `
+    <div class="eval-head"><h2>Auswertung</h2>
+      <div class="seg" role="group" aria-label="Zeitraum">
+        <button data-action="view" data-view="day" aria-pressed="${S.view === 'day'}">Tag</button>
+        <button data-action="view" data-view="week" aria-pressed="${S.view === 'week'}">Woche</button>
+      </div></div>
+    <p class="sub">${esc(sub)}</p>`;
+  if (!items.length && !(water > 0)) {
+    return `<aside class="eval">${head}<p class="empty">Hier ist noch nichts zu sehen. Trage Essen ein, dann siehst du, welche Nährstoffe gedeckt sind und welche fehlen.</p></aside>`;
+  }
+  const wcov = coverage(water, { value: WATER_TARGET, type: 'min' });
+  const waterRow = `<div class="group"><h3>Wasser</h3><div class="nrow"><div class="nname">${S.view === 'week' ? 'Durchschnitt an Tagen mit Eintrag' : 'Getrunken'}</div>
+    <div class="nval"><b>${fmtNum(water)}</b> / ${fmtNum(WATER_TARGET)} ml</div>
+    <div class="bar" role="img" aria-label="${Math.round(wcov.pct * 100)} Prozent des Richtwerts"><div class="fill ${wcov.cls}" style="width:${wcov.fill.toFixed(1)}%"></div><div class="tick"></div></div></div></div>`;
+  const groups = items.length ? GROUPS.map(g => `<div class="group"><h3>${g}</h3>${NUTRIENTS.filter(n => n.group === g).map(n => nutrientRowHTML(n, tot, targets[n.key])).join('')}</div>`).join('') : '';
+  const kcalGap = tot.kcal.missing ? `<div class="gap">Bei ${tot.kcal.missing} von ${tot.kcal.n} Einträgen fehlen die Kalorien.</div>` : '';
+  return `<aside class="eval">${head}
+    <div class="kcal">${fmtNum(tot.kcal.sum)} <small>kcal</small></div>${kcalGap}${sportLine}
+    ${mealsHTML(items, nDays)}${waterRow}${groups}${novaHTML(items)}
+    <p class="foot">Der senkrechte Strich markiert 100 Prozent des Richtwerts. Die Richtwerte sind vereinfacht nach den D-A-CH-Referenzwerten für Erwachsene (Wasser: Getränkemenge nach DGE, Koffein: Obergrenze der EFSA) und kein medizinischer Rat. Eiweiß rechnet mit 0,8 g pro kg Körpergewicht. Für Cholesterin, gesättigte Fette und Omega-3 gibt es hier keinen Richtwert. Bei Nahrungsergänzung wird nicht geprüft, ob Obergrenzen überschritten sind.</p>
+  </aside>`;
+}
+
+function weekLabel() {
+  const a = S.monday, b = addDays(a, 6);
+  return `${a.getDate()}. ${MON[a.getMonth()]} bis ${b.getDate()}. ${MON[b.getMonth()]} ${b.getFullYear()}`;
+}
+function planHTML() {
+  const dates = weekDates(S.monday);
+  return `<div class="weekbar">
+      <button class="btn ghost icon" data-action="prev-week" aria-label="Vorherige Woche">‹</button>
+      <span class="weeklabel">${weekLabel()}</span>
+      <button class="btn ghost icon" data-action="next-week" aria-label="Nächste Woche">›</button>
+      <button class="btn ghost small" data-action="today">Heute</button></div>
+    <div class="layout"><div>${stripHTML(dates)}${dayDetailHTML(S.selected)}</div>${evalHTML()}</div>`;
+}
+
+/* ---------------------------------------------------------------------
+   Darstellung: Verlauf
+   --------------------------------------------------------------------- */
+function histMetrics() {
+  return [{ key: 'kcal', label: 'Kalorien', unit: 'kcal', dec: 0 },
+    ...NUTRIENTS.map(n => ({ key: n.key, label: n.label, unit: n.unit, dec: n.dec })),
+    { key: 'water', label: 'Wasser', unit: 'ml', dec: 0 },
+    { key: 'weight', label: 'Körpergewicht', unit: 'kg', dec: 1 }];
+}
+const histDates = n => { const t = parseDate(todayStr()); return Array.from({ length: n }, (_, i) => fmtDate(addDays(t, i - n + 1))); };
+
+function chartHTML(series, meta, target) {
+  const W = 720, H = 280, L = 54, R = 14, T = 16, B = 30, iw = W - L - R, ih = H - T - B;
+  const vals = series.map(s => s.value).filter(v => v !== null);
+  if (!vals.length) return '<p class="empty">In diesem Zeitraum gibt es noch keine Daten.</p>';
+  const isLine = meta.key === 'weight';
+  let lo = 0, hi = Math.max(...vals, target && !isLine ? target.value : 0);
+  if (isLine) { lo = Math.min(...vals); hi = Math.max(...vals); const p = Math.max(0.5, (hi - lo) * 0.25); lo = Math.floor(lo - p); hi = Math.ceil(hi + p); }
+  else hi = niceMax(hi);
+  const yOf = v => T + ih - (v - lo) / (hi - lo) * ih;
+  const N = series.length, slot = iw / N;
+  const xC = i => L + slot * (i + 0.5);
+  const tdec = hi - lo < 10 ? 1 : 0;
+  let g = '';
+  for (let i = 0; i <= 3; i++) {
+    const v = lo + (hi - lo) * i / 3, y = yOf(v);
+    g += `<line x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
+      <text x="${L - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtNum(v, tdec)}</text>`;
+  }
+  const step = Math.ceil(N / 8);
+  series.forEach((s, i) => { if (i % step === 0 || i === N - 1 && N <= 8) g += `<text x="${xC(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${shortDate(s.date)}</text>`; });
+  let marks = '';
+  if (!isLine) {
+    const bw = Math.max(2, Math.min(24, slot * 0.7)), yb = T + ih;
+    series.forEach((s, i) => {
+      if (s.value === null || s.value <= 0) return;
+      const h = Math.max(1, (s.value - lo) / (hi - lo) * ih), y = yb - h, x = xC(i) - bw / 2, r = Math.min(4, bw / 2, h);
+      marks += `<path d="M${x.toFixed(1)} ${yb} V${(y + r).toFixed(1)} Q${x.toFixed(1)} ${y.toFixed(1)} ${(x + r).toFixed(1)} ${y.toFixed(1)} H${(x + bw - r).toFixed(1)} Q${(x + bw).toFixed(1)} ${y.toFixed(1)} ${(x + bw).toFixed(1)} ${(y + r).toFixed(1)} V${yb} Z" fill="var(--leaf)"/>`;
+    });
+  } else {
+    const pts = series.map((s, i) => s.value === null ? null : [xC(i), yOf(s.value)]).filter(Boolean);
+    if (pts.length > 1) marks += `<polyline points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach(p => { marks += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="var(--leaf)" stroke="#fff" stroke-width="2"/>`; });
+  }
+  let tline = '';
+  if (target && !isLine && target.value <= hi) {
+    const y = yOf(target.value);
+    tline = `<line x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--ink)" stroke-width="1.5"/>
+      <text x="${W - R}" y="${(y - 5).toFixed(1)}" text-anchor="end" font-size="11" font-weight="600" fill="var(--ink)">${target.type === 'max' ? 'Obergrenze' : 'Richtwert'} ${fmtNum(target.value, meta.dec)} ${meta.unit}</text>`;
+  }
+  const focusable = N <= 31 ? 'tabindex="0"' : '';
+  const hits = series.map((s, i) => {
+    const txt = `${dateLabel(s.date)}: ${s.value === null ? 'keine Daten' : fmtNum(s.value, meta.dec) + ' ' + meta.unit}`;
+    return `<rect class="hit" x="${(L + slot * i).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${ih}" data-tip="${esc(txt)}" aria-label="${esc(txt)}" ${focusable}></rect>`;
+  }).join('');
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="group" aria-label="${esc(meta.label)}, ${N} Tage, Durchschnitt ${fmtNum(avg, meta.dec)} ${meta.unit}">${g}${tline}${marks}${hits}</svg>`;
+}
+
+function histHTML() {
+  const metrics = histMetrics();
+  const meta = metrics.find(m => m.key === S.hist.metric) || metrics[1];
+  const dates = histDates(S.hist.range);
+  const series = seriesFor(meta.key, dates, S.days);
+  const vals = series.map(s => s.value).filter(v => v !== null);
+  const targets = computeTargets(S.profile);
+  const target = meta.key === 'water' ? { value: WATER_TARGET, type: 'min' } : targets[meta.key];
+  const stat = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+  const stats = vals.length ? `<div class="stats">${stat(fmtNum(vals.reduce((a, b) => a + b, 0) / vals.length, meta.dec) + ' ' + meta.unit, `Durchschnitt an ${vals.length} Tagen mit Daten`)}${stat(fmtNum(Math.max(...vals), meta.dec) + ' ' + meta.unit, 'Höchster Wert')}${stat(fmtNum(Math.min(...vals), meta.dec) + ' ' + meta.unit, 'Niedrigster Wert')}</div>` : '';
+  const rows = series.filter(s => s.value !== null).map(s => `<tr><td>${dateLabel(s.date)}</td><td class="r">${fmtNum(s.value, meta.dec)} ${meta.unit}</td></tr>`).join('');
+  return `<section class="page"><div class="page-head"><h2>Verlauf</h2>
+    <div class="controls">
+      <label class="muted" for="hmetric">Anzeigen</label>
+      <select id="hmetric" data-hist="metric">${metrics.map(m => `<option value="${m.key}" ${m.key === meta.key ? 'selected' : ''}>${m.label} (${m.unit})</option>`).join('')}</select>
+      <div class="seg" role="group" aria-label="Zeitraum">${[7, 30, 90].map(n => `<button data-action="hist-range" data-range="${n}" aria-pressed="${S.hist.range === n}">${n} Tage</button>`).join('')}</div>
+    </div></div>
+    ${chartHTML(series, meta, target).replace('class="chart"', `class="chart ${S.hist.loading ? 'loading' : ''}"`)}
+    ${S.hist.loading ? '<p class="hint">Lädt …</p>' : ''}
+    ${stats}
+    <p class="hint">Tage ohne Einträge zählen nicht mit. ${meta.key === 'weight' || meta.key === 'water' ? '' : 'Fehlen bei Produkten Nährwertangaben, liegt der echte Wert höher als angezeigt.'}</p>
+    ${rows ? `<details class="tbl"><summary>Zahlen anzeigen</summary><table><thead><tr><th>Tag</th><th class="r">${esc(meta.label)}</th></tr></thead><tbody>${rows}</tbody></table></details>` : ''}
+  </section>`;
+}
+
+async function ensureHistory() {
+  S.hist.loading = true; renderAll();
+  try { await loadDates(histDates(S.hist.range)); }
+  catch (e) { console.error(e); toast('Der Verlauf konnte nicht vollständig geladen werden.'); }
+  S.hist.loading = false; renderAll();
+}
+
+/* ---------------------------------------------------------------------
+   Darstellung: Einkaufsliste
+   --------------------------------------------------------------------- */
+const fmtAmount = g => g >= 1000 ? `${fmtNum(g / 1000, 2)} kg` : `${fmtNum(Math.round(g))} g`;
+function currentShopList() {
+  const dates = weekDates(S.monday);
+  return shoppingList(S.days, dates, S.shopFromToday ? todayStr() : null);
+}
+function shopHTML() {
+  const list = currentShopList();
+  const wk = fmtDate(S.monday);
+  const rows = list.map(e => {
+    const done = !!S.lib.shopChecked[shopKey(wk, e.key)];
+    return `<li class="${done ? 'done' : ''}"><label><input type="checkbox" data-shop="${esc(e.key)}" ${done ? 'checked' : ''}><span class="nm">${esc(e.name)}</span></label><span class="amt">${fmtAmount(e.grams)}</span></li>`;
+  }).join('');
+  return `<section class="page"><div class="page-head"><h2>Einkaufsliste</h2>
+    <div class="weekbar" style="margin:0">
+      <button class="btn ghost icon" data-action="prev-week" aria-label="Vorherige Woche">‹</button>
+      <span class="weeklabel">${weekLabel()}</span>
+      <button class="btn ghost icon" data-action="next-week" aria-label="Nächste Woche">›</button></div></div>
+    <div class="controls" style="margin-bottom:8px">
+      <label><input type="checkbox" data-shopopt="future" ${S.shopFromToday ? 'checked' : ''}> Vergangene Tage weglassen</label>
+      <button class="btn ghost small" data-action="shop-copy" ${list.length ? '' : 'disabled'}>Liste kopieren</button></div>
+    ${list.length ? `<ul class="shoplist">${rows}</ul>` : '<p class="empty">Keine Einträge in diesem Zeitraum. Plane Essen im Wochenplan, dann erscheint hier, was du einkaufen musst. Rezepte werden in ihre Zutaten aufgeteilt.</p>'}
+    <p class="hint">Die Mengen sind aus deinem Wochenplan zusammengerechnet. Nahrungsergänzung steht nicht in der Liste.</p>
+  </section>`;
+}
+
+/* ---------------------------------------------------------------------
+   Darstellung: Bibliothek
+   --------------------------------------------------------------------- */
+function libRowHTML(it, kind) {
+  let meta = '';
+  if (kind === 'supp') {
+    const ks = ['protein', ...MICRO_KEYS].filter(k => num(it.perUnit && it.perUnit[k]) > 0).slice(0, 4);
+    meta = `<span class="chip">pro ${esc(it.unit || 'Stk')}</span>` + ks.map(k => { const n = NUTRIENTS.find(x => x.key === k); return `<span class="chip">${n.label} ${fmtNum(it.perUnit[k], n.dec)} ${n.unit}</span>`; }).join('');
+  } else {
+    const p = it.per100 || {};
+    meta = `<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span><span class="chip">pro 100 g</span>${kind === 'recipe' ? `<span class="chip">${(it.ingredients || []).length} Zutaten</span>` : ''}${chipsFor(it)}`;
+  }
+  const edit = kind === 'fav' ? '' : `<button class="btn ghost small" data-action="lib-edit" data-kind="${kind}" data-id="${esc(it.id)}">Bearbeiten</button>`;
+  const del = kind === 'fav'
+    ? `<button class="btn danger small" data-action="fav-remove" data-key="${esc(foodKey(it))}">Entfernen</button>`
+    : `<button class="btn danger small" data-action="lib-delete" data-kind="${kind}" data-id="${esc(it.id)}">Löschen</button>`;
+  return `<div class="librow"><div class="iname"><strong>${esc(it.name)}</strong>${it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : ''}<div class="chips">${meta}</div></div><div class="acts">${edit}${del}</div></div>`;
+}
+function libHTML() {
+  const foods = S.lib.custom.filter(x => x.source === 'custom');
+  const recipes = S.lib.custom.filter(x => x.source === 'recipe');
+  const sec = (title, kind, list, newLabel, hint) => `<div class="libsec"><div class="head"><h3>${title}</h3>${newLabel ? `<button class="btn small" data-action="lib-new" data-kind="${kind}">${newLabel}</button>` : ''}</div>
+    ${list.length ? list.map(x => libRowHTML(x, kind)).join('') : `<p class="empty" style="margin-top:2px">${hint}</p>`}</div>`;
+  return `<section class="page"><div class="page-head"><h2>Meine Bibliothek</h2></div>
+    ${sec('Eigene Lebensmittel', 'food', foods, 'Neues Lebensmittel', 'Hier legst du Essen an, das in keiner Datenbank steht, zum Beispiel ein Gericht aus dem Restaurant.')}
+    ${sec('Rezepte', 'recipe', recipes, 'Neues Rezept', 'Ein Rezept besteht aus Zutaten. Die App rechnet daraus die Nährwerte pro 100 g aus.')}
+    ${sec('Nahrungsergänzung', 'supp', S.lib.supplements, 'Neue Ergänzung', 'Lege Tabletten, Kapseln oder Pulver mit ihren Inhaltsstoffen pro Stück an.')}
+    ${sec('Favoriten', 'fav', S.lib.favorites, '', 'Mit dem Stern bei einem Eintrag oder Suchergebnis merkst du dir Essen für später.')}
+  </section>`;
+}
+
+/* ---------------------------------------------------------------------
+   Rahmen und Anmeldung
+   --------------------------------------------------------------------- */
+function authHTML() {
+  const login = S.authMode === 'login';
+  return `<main class="auth">
+    <h1>Nährstoff-Planer</h1>
+    <p>${login ? 'Melde dich an, um deinen Wochenplan zu sehen.' : 'Erstelle ein Konto, damit dein Plan auf allen Geräten verfügbar ist.'}</p>
+    ${S.authError ? `<p class="error" role="alert">${esc(S.authError)}</p>` : ''}
+    <form data-form="auth">
+      <div class="field"><label for="em">E-Mail</label><input id="em" name="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="pw">Passwort</label><input id="pw" name="password" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" minlength="6" required></div>
+      <button class="btn" type="submit">${login ? 'Anmelden' : 'Konto erstellen'}</button>
+    </form>
+    <button class="link" data-action="auth-toggle">${login ? 'Noch kein Konto? Konto erstellen' : 'Schon ein Konto? Anmelden'}</button>
+  </main>`;
+}
+function shellHTML() {
+  const note = S.mode === 'local'
+    ? `<div class="note">${esc(S.initError || 'Testmodus: Deine Daten bleiben nur in diesem Browser. Trage oben in der Datei deine Firebase-Daten ein, damit sie zwischen PC und iPhone synchron sind.')}</div>` : '';
+  const pages = [['plan', 'Plan'], ['history', 'Verlauf'], ['shop', 'Einkauf'], ['lib', 'Bibliothek']];
+  const body = S.page === 'history' ? histHTML() : S.page === 'shop' ? shopHTML() : S.page === 'lib' ? libHTML() : planHTML();
+  return `<div class="wrap">
+    <header class="top">
+      <h1 class="brand">Nährstoff-Planer</h1>
+      <nav class="nav" aria-label="Bereiche">${pages.map(([id, l]) => `<button data-action="page" data-page="${id}" ${S.page === id ? 'aria-current="page"' : ''}>${l}</button>`).join('')}</nav>
+      <button class="btn ghost small" data-action="settings">Profil</button>
+    </header>
+    ${note}${body}
+  </div>`;
+}
+function renderAll() {
+  const root = $('#app');
+  if (S.booting) { root.innerHTML = '<p class="center">Lädt …</p>'; return; }
+  if (S.mode === 'firebase' && !S.user) { root.innerHTML = authHTML(); return; }
+  root.innerHTML = shellHTML();
+}
+
+/* ---------------------------------------------------------------------
+   Dialoge: gemeinsame Teile
+   --------------------------------------------------------------------- */
+function modalShell(title, sub, body, footer = '') {
+  return `<div class="overlay" data-action="close-modal"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <div class="sheet-head"><div><h2 id="mt">${title}</h2>${sub ? `<p class="sub" style="margin:0">${esc(sub)}</p>` : ''}</div>
+      <button class="x" data-action="close-modal" aria-label="Schließen">×</button></div>
+    <div class="sheet-body">${body}</div>${footer}
+  </div>`;
+}
+function closeModal() { stopScan(); S.modal = null; $('#modal-root').innerHTML = ''; }
+function dismissModal() {
+  const m = S.modal; if (!m) return;
+  const backToRecipe = m.type === 'add' && m.mode === 'pick' && S.draft;
+  closeModal();
+  if (backToRecipe) openRecipeEditor(S.draft); else S.draft = null;
+}
+function showFormError(form, msg) {
+  let e = form.querySelector('[data-error]');
+  if (!e) { e = document.createElement('p'); e.className = 'error'; e.setAttribute('role', 'alert'); e.setAttribute('data-error', ''); form.prepend(e); }
+  e.textContent = msg;
+  e.scrollIntoView && e.scrollIntoView({ block: 'nearest' });
+}
+
+/* ---------------------------------------------------------------------
+   Dialog: Essen hinzufügen
+   --------------------------------------------------------------------- */
+function openAdd(date, mode = 'log', onPick = null) {
+  const now = new Date(); const isToday = date === todayStr();
+  const time = isToday ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : '12:30';
+  const meal = isToday ? mealForTime(time) : 'mittag';
+  S.modal = { type: 'add', mode, date, tab: 'search', results: [], shown: [], picked: null, notes: [], loading: false, meal, time, mealTouched: false, timeTouched: false, onPick };
+  const tabs = [['search', 'Suchen'], ['scan', 'Barcode'], ['quick', 'Schnell'], ['own', 'Eigene']].concat(mode === 'log' ? [['supp', 'Ergänzung']] : []);
+  $('#modal-root').innerHTML = modalShell(mode === 'pick' ? 'Zutat hinzufügen' : 'Essen hinzufügen', mode === 'pick' ? 'Für dein Rezept' : dateLabel(date), `
+    <div class="tabs" role="tablist">${tabs.map(([id, l]) => `<button role="tab" id="t-${id}" data-action="tab" data-tab="${id}" aria-selected="${id === 'search'}">${l}</button>`).join('')}</div>
+    <div id="pane-search">
+      <form class="row" data-form="search"><input name="q" type="search" placeholder="z. B. Skyr, Haferflocken, Hähnchenbrust" aria-label="Lebensmittel suchen" autocomplete="off" required minlength="2"><button class="btn" type="submit">Suchen</button></form>
+      <p class="hint">Produkte kommen von Open Food Facts. Frische Lebensmittel wie Obst, Gemüse und Fleisch kommen aus der USDA-Datenbank, mit englischen Namen.</p>
+    </div>
+    <div id="pane-scan" hidden>
+      <div id="reader"></div>
+      <div class="row"><button class="btn" data-action="start-scan" type="button">Kamera starten</button></div>
+      <form class="row" data-form="code"><input name="code" inputmode="numeric" pattern="[0-9]{8,14}" placeholder="Oder Barcode-Nummer eingeben" aria-label="Barcode-Nummer" required><button class="btn" type="submit">Laden</button></form>
+      <p class="hint">Die Kamera funktioniert nur, wenn die Seite über HTTPS geöffnet ist und du den Zugriff erlaubst.</p>
+    </div>
+    <div id="results" aria-live="polite"></div>`,
+    `<div class="pending" id="pending" hidden></div>`);
+  setTimeout(() => { const i = $('#pane-search input'); if (i) i.focus(); }, 0);
+}
+
+function rowHTML(it, i) {
+  const m = S.modal;
+  const picked = m.picked === i, supp = it.source === 'supp';
+  let chips;
+  if (supp) {
+    const ks = ['protein', ...MICRO_KEYS].filter(k => num(it.perUnit && it.perUnit[k]) > 0).slice(0, 4);
+    chips = `<span class="chip">pro ${esc(it.unit || 'Stk')}</span>` + ks.map(k => { const n = NUTRIENTS.find(x => x.key === k); return `<span class="chip">${n.label} ${fmtNum(it.perUnit[k], n.dec)} ${n.unit}</span>`; }).join('');
+  } else {
+    const p = it.per100 || {};
+    const micro = MICRO_KEYS.filter(k => p[k] != null).length;
+    chips = `<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span>${it.source === 'recipe' ? '<span class="chip">Rezept</span>' : ''}${it.source === 'custom' ? '<span class="chip">Eigenes</span>' : ''}${chipsFor(it)}<span class="chip" title="Wie viele der ${MICRO_KEYS.length} Vitamine und Mineralstoffe in den Daten stehen">Vitamine und Mineralstoffe: ${micro} von ${MICRO_KEYS.length}</span>`;
+  }
+  const fav = isFavRef(it);
+  return `<li class="res ${picked ? 'picked' : ''}">
+    <div class="iname"><strong>${esc(it.name)}</strong>${it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : ''}<div class="chips">${chips}</div></div>
+    <div class="resact"><button class="x star" data-action="fav-toggle" data-idx="${i}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten hinzufügen'}">${fav ? '★' : '☆'}</button>
+      <button class="btn small" data-action="pick" data-idx="${i}">Auswählen</button></div></li>`;
+}
+
+function renderResults() {
+  const m = S.modal; if (!m || m.type !== 'add') return;
+  const box = $('#results'); if (!box) return;
+  const notAnySupp = x => m.mode === 'log' || x.source !== 'supp';
+  const notes = (m.notes || []).map(n => `<p class="hint">${esc(n)}</p>`).join('');
+  let html = '';
+  if (m.tab === 'search' || m.tab === 'scan') {
+    m.shown = m.results;
+    const off = m.results.map((it, i) => [it, i]).filter(([it]) => it.source === 'off');
+    const usda = m.results.map((it, i) => [it, i]).filter(([it]) => it.source === 'usda');
+    if (off.length) html += `<h3>Produkte (Open Food Facts), Werte pro 100 g</h3><ul class="results">${off.map(([it, i]) => rowHTML(it, i)).join('')}</ul>`;
+    if (usda.length) html += `<h3>Frische Lebensmittel (USDA), Werte pro 100 g</h3><ul class="results">${usda.map(([it, i]) => rowHTML(it, i)).join('')}</ul>`;
+    if (m.loading) html += '<p class="hint">Sucht …</p>';
+  } else if (m.tab === 'quick') {
+    const fav = S.lib.favorites.filter(notAnySupp);
+    const rec = S.lib.recent.filter(notAnySupp).filter(r => !fav.some(f => foodKey(f) === foodKey(r)));
+    m.shown = [...fav, ...rec];
+    if (fav.length) html += `<h3>Favoriten</h3><ul class="results">${fav.map((it, i) => rowHTML(it, i)).join('')}</ul>`;
+    if (rec.length) html += `<h3>Zuletzt gegessen</h3><ul class="results">${rec.map((it, i) => rowHTML(it, fav.length + i)).join('')}</ul>`;
+    if (!m.shown.length) html = '<p class="empty">Hier erscheinen deine Favoriten (Stern) und das, was du zuletzt eingetragen hast.</p>';
+  } else if (m.tab === 'own') {
+    m.shown = S.lib.custom;
+    html = m.shown.length ? `<ul class="results">${m.shown.map((it, i) => rowHTML(it, i)).join('')}</ul>` : '<p class="empty">Du hast noch keine eigenen Lebensmittel oder Rezepte.</p>';
+    html += `<p class="hint"><button class="link" style="margin:0" data-action="goto-lib">Eigenes Essen und Rezepte anlegen</button></p>`;
+  } else if (m.tab === 'supp') {
+    m.shown = S.lib.supplements;
+    html = m.shown.length ? `<ul class="results">${m.shown.map((it, i) => rowHTML(it, i)).join('')}</ul>` : '<p class="empty">Du hast noch keine Nahrungsergänzung angelegt.</p>';
+    html += `<p class="hint"><button class="link" style="margin:0" data-action="goto-lib">Nahrungsergänzung anlegen</button></p>`;
+  }
+  box.innerHTML = notes + html;
+}
+function refreshAddModal() {
+  const m = S.modal; if (!m || m.type !== 'add') return;
+  const prev = m.picked != null ? m.shown[m.picked] : null;
+  renderResults();
+  if (prev) {
+    const idx = m.shown.findIndex(x => foodKey(x) === foodKey(prev));
+    m.picked = idx >= 0 ? idx : null;
+    if (m.picked === null) renderPending(); else renderResults();
+  }
+}
+
+function renderPending() {
+  const m = S.modal; const box = $('#pending'); if (!m || m.type !== 'add' || !box) return;
+  const it = m.picked != null ? m.shown[m.picked] : null;
+  if (!it) { box.hidden = true; box.innerHTML = ''; return; }
+  const supp = it.source === 'supp';
+  const defQty = supp ? 1 : Math.round(it.portion || 100);
+  const qty = supp
+    ? `<label class="gram"><input id="pqty" type="number" min="0.5" max="50" step="0.5" value="${defQty}" aria-label="Menge"> ${esc(it.unit || 'Stk')}</label>`
+    : `<label class="gram"><input id="pqty" type="number" min="1" max="5000" step="1" value="${defQty}" aria-label="Menge in Gramm"> g</label>`;
+  const when = m.mode === 'log'
+    ? `${supp ? '' : `<select id="pmeal" aria-label="Mahlzeit">${MEALS.filter(x => x.id !== 'erg').map(x => `<option value="${x.id}" ${x.id === m.meal ? 'selected' : ''}>${x.label}</option>`).join('')}</select>`}<input id="ptime" type="time" value="${esc(m.time)}" aria-label="Uhrzeit">`
+    : '';
+  box.hidden = false;
+  box.innerHTML = `<div class="pname">${esc(it.name)}</div>${qty}${when}
+    <button class="btn" data-action="add-pending">${m.mode === 'log' ? 'Zum Plan hinzufügen' : 'Als Zutat hinzufügen'}</button>`;
+  const g = $('#pqty'); if (g) { g.focus(); g.select(); }
+}
+
+async function doSearch(q) {
+  const m = S.modal; if (!m || m.type !== 'add') return;
+  q = q.trim(); if (q.length < 2) return;
+  m.results = []; m.picked = null; m.loading = true; m.notes = [];
+  renderPending(); renderResults();
+  const en = translateQuery(q);
+  const [off, usda] = await Promise.allSettled([searchOFF(q), searchUSDA(en)]);
+  if (S.modal !== m) return;
+  m.loading = false;
+  if (off.status === 'fulfilled') m.results.push(...off.value);
+  else m.notes.push('Open Food Facts antwortet gerade nicht. Versuche es gleich noch einmal.');
+  if (usda.status === 'fulfilled') m.results.push(...usda.value);
+  else if (usda.reason && usda.reason.status === 429) m.notes.push('Das USDA-Limit ist erreicht. Trage in der Datei einen eigenen kostenlosen USDA-Schlüssel ein.');
+  else m.notes.push('Die USDA-Datenbank antwortet gerade nicht.');
+  if (en !== q.toLowerCase() && usda.status === 'fulfilled') m.notes.push(`Frische Lebensmittel wurden als „${en}“ gesucht.`);
+  if (!m.results.length && !m.notes.length) m.notes.push('Nichts gefunden. Probiere einen anderen Begriff oder lege das Essen unter „Eigene“ an.');
+  renderResults();
+}
+async function doLookup(code) {
+  const m = S.modal; if (!m || m.type !== 'add') return;
+  m.results = []; m.picked = null; m.loading = true; m.notes = [];
+  renderPending(); renderResults();
+  try {
+    const it = await lookupOFF(code.trim());
+    if (S.modal !== m) return;
+    if (it) m.results = [it];
+    else m.notes.push('Dieses Produkt ist in Open Food Facts nicht eingetragen oder hat keine Nährwerte. Suche es per Name oder lege es unter „Eigene“ an.');
+  } catch (e) { m.notes.push('Open Food Facts antwortet gerade nicht. Versuche es gleich noch einmal.'); }
+  m.loading = false; renderResults();
+}
+
+/* Barcode-Scanner (lädt die Bibliothek erst beim Start) */
+let scanner = null;
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (window.Html5Qrcode) return res();
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => rej(new Error('Scanner konnte nicht geladen werden'));
+    document.head.appendChild(s);
+  });
+}
+async function stopScan() {
+  if (!scanner) return;
+  const sc = scanner; scanner = null;
+  try { await sc.stop(); sc.clear(); } catch { /* bereits gestoppt */ }
+}
+async function startScan() {
+  const m = S.modal; if (!m) return;
+  try {
+    await loadScript(SCAN_LIB);
+    await stopScan();
+    const F = window.Html5QrcodeSupportedFormats;
+    scanner = new window.Html5Qrcode('reader', { formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E], useBarCodeDetectorIfSupported: true, verbose: false });
+    await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 260, height: 140 } },
+      async text => { await stopScan(); const i = $('#pane-scan input'); if (i) i.value = text; doLookup(text); },
+      () => { });
+  } catch (e) {
+    console.error(e); scanner = null;
+    m.notes = ['Die Kamera ist nicht verfügbar. Sie braucht HTTPS und deine Erlaubnis. Du kannst die Nummer auch unten eingeben.'];
+    renderResults();
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Dialog: Eintrag ändern, Profil
+   --------------------------------------------------------------------- */
+function openEditItem(date, id) {
+  const it = getDay(date).items.find(x => x.id === id); if (!it) return;
+  S.modal = { type: 'edit', date, id };
+  const supp = it.kind === 'supp';
+  $('#modal-root').innerHTML = modalShell(esc(it.name), dateLabel(date), `
+    <form data-form="edit-item">
+      <div class="field"><label for="eq">Menge (${supp ? esc(it.unit) : 'g'})</label><input id="eq" name="qty" type="text" inputmode="decimal" value="${esc(String(supp ? it.qty : it.grams).replace('.', ','))}" required></div>
+      ${supp ? '' : `<div class="field"><label for="em2">Mahlzeit</label><select id="em2" name="meal">${MEALS.filter(x => x.id !== 'erg').map(x => `<option value="${x.id}" ${x.id === it.meal ? 'selected' : ''}>${x.label}</option>`).join('')}</select></div>`}
+      <div class="field"><label for="et">Uhrzeit</label><input id="et" name="time" type="time" value="${esc(it.time)}"></div>
+      <button class="btn" type="submit">Speichern</button>
+    </form>`);
+}
+function openSettings() {
+  S.modal = { type: 'settings' };
+  const p = S.profile;
+  $('#modal-root').innerHTML = modalShell('Profil', 'Daraus berechnen sich deine Richtwerte', `
+    <form data-form="settings">
+      <fieldset class="field"><legend>Geschlecht</legend>
+        <div class="radios">
+          <label><input type="radio" name="sex" value="m" ${p.sex !== 'w' ? 'checked' : ''}> Männlich</label>
+          <label><input type="radio" name="sex" value="w" ${p.sex === 'w' ? 'checked' : ''}> Weiblich</label>
+        </div></fieldset>
+      <div class="field"><label for="wt">Körpergewicht in kg</label><input id="wt" name="weight" type="number" min="30" max="250" step="1" value="${esc(p.weight)}" required></div>
+      <button class="btn" type="submit">Speichern</button>
+    </form>
+    ${S.mode === 'firebase' ? `<p style="margin-top:18px"><button class="btn ghost small" data-action="logout">Abmelden</button> <span class="hint">${esc(S.user && S.user.email || '')}</span></p>` : ''}`);
+}
+
+/* ---------------------------------------------------------------------
+   Dialoge: eigene Lebensmittel, Ergänzungen, Rezepte
+   --------------------------------------------------------------------- */
+function valueFieldsHTML(vals, mode) {
+  const basis = ['kcal', 'protein', 'fat', 'carbs', 'sugar', 'fiber', 'salt'];
+  const groups = [
+    ['Nährwerte', basis],
+    ['Fette und mehr', NUTRIENTS.filter(n => n.group === 'Fette und mehr').map(n => n.key)],
+    ['Vitamine', NUTRIENTS.filter(n => n.group === 'Vitamine').map(n => n.key)],
+    ['Mineralstoffe', NUTRIENTS.filter(n => n.group === 'Mineralstoffe').map(n => n.key)]
+  ];
+  const unitOf = k => k === 'kcal' ? 'kcal' : NUTRIENTS.find(n => n.key === k).unit;
+  const input = k => {
+    const v = vals && vals[k] != null ? String(Math.round(vals[k] * 1000) / 1000).replace('.', ',') : '';
+    return `<div class="field"><label for="v_${k}">${labelOf(k)} (${unitOf(k)})</label><input id="v_${k}" name="v_${k}" type="text" inputmode="decimal" value="${esc(v)}" placeholder="${mode === 'unit' ? '0' : 'unbekannt'}"></div>`;
+  };
+  return groups.map(([title, keys], gi) => {
+    const open = gi === 0 || keys.some(k => vals && vals[k] != null);
+    return `<details class="fd" ${open ? 'open' : ''}><summary>${title}</summary><div class="fgrid">${keys.map(input).join('')}</div></details>`;
+  }).join('');
+}
+function readValueFields(data) {
+  const f = {}; for (const k of ALL_KEYS) f[k] = data['v_' + k];
+  return parseValueFields(f);
+}
+
+function openFoodEditor(id) {
+  const ex = id ? S.lib.custom.find(x => x.id === id && x.source === 'custom') : null;
+  S.modal = { type: 'food-editor' };
+  $('#modal-root').innerHTML = modalShell(ex ? 'Lebensmittel bearbeiten' : 'Neues Lebensmittel', 'Alle Werte pro 100 g', `
+    <form data-form="food-editor">
+      <input type="hidden" name="id" value="${esc(ex ? ex.id : '')}">
+      <div class="field"><label for="fn">Name</label><input id="fn" name="name" type="text" value="${esc(ex ? ex.name : '')}" required maxlength="120"></div>
+      <div class="field"><label for="fb">Marke oder Hinweis (optional)</label><input id="fb" name="brand" type="text" value="${esc(ex ? ex.brand : '')}" maxlength="80"></div>
+      <div class="fgrid"><div class="field"><label for="fp">Übliche Portion in g (optional)</label><input id="fp" name="portion" type="text" inputmode="decimal" value="${ex && ex.portion ? esc(ex.portion) : ''}"></div>
+        <div class="field"><label for="fnv">Verarbeitungsgrad (optional)</label><select id="fnv" name="nova">${[['', 'Unbekannt'], ['1', 'Nova 1, unverarbeitet'], ['2', 'Nova 2, verarbeitete Zutat'], ['3', 'Nova 3, verarbeitet'], ['4', 'Nova 4, stark verarbeitet']].map(([v, l]) => `<option value="${v}" ${String(ex && ex.nova || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
+      <p class="hint">Leere Felder gelten als unbekannt. Die Auswertung weist dann darauf hin, dass dieser Wert fehlt.</p>
+      ${valueFieldsHTML(ex ? ex.per100 : null, 'per100')}
+      <button class="btn" type="submit" style="margin-top:12px">Speichern</button>
+    </form>`);
+}
+function openSuppEditor(id) {
+  const ex = id ? S.lib.supplements.find(x => x.id === id) : null;
+  S.modal = { type: 'supp-editor' };
+  $('#modal-root').innerHTML = modalShell(ex ? 'Ergänzung bearbeiten' : 'Neue Nahrungsergänzung', 'Alle Werte pro Stück, Kapsel oder Portion', `
+    <form data-form="supp-editor">
+      <input type="hidden" name="id" value="${esc(ex ? ex.id : '')}">
+      <div class="field"><label for="sn">Name</label><input id="sn" name="name" type="text" value="${esc(ex ? ex.name : '')}" required maxlength="120"></div>
+      <div class="field"><label for="su">Einheit</label><input id="su" name="unit" type="text" value="${esc(ex ? ex.unit : 'Tablette')}" required maxlength="30" placeholder="Tablette, Kapsel, Messlöffel"></div>
+      <p class="hint">Trage ein, was in einer Einheit steckt. Leere Felder gelten als nicht enthalten.</p>
+      ${valueFieldsHTML(ex ? ex.perUnit : null, 'unit')}
+      <button class="btn" type="submit" style="margin-top:12px">Speichern</button>
+    </form>`);
+}
+
+function draftPreview(d) {
+  const ings = d.ingredients;
+  if (!ings.length) return '<p class="hint">Füge mindestens eine Zutat hinzu.</p>';
+  const total = parseDecimal(d.total);
+  const calc = computeRecipe(ings, Number.isNaN(total) ? null : total);
+  const pc = parseDecimal(d.portions);
+  const portion = pc && !Number.isNaN(pc) && pc >= 1 ? ` Eine Portion hat etwa ${fmtNum(Math.round(calc.total / pc))} g und ${fmtNum(calc.per100.kcal != null ? calc.per100.kcal * calc.total / pc / 100 : null)} kcal.` : '';
+  const inc = calc.incomplete.length ? `<br>Bei einigen Zutaten fehlen Angaben zu ${calc.incomplete.slice(0, 4).map(labelOf).join(', ')}${calc.incomplete.length > 4 ? ' und mehr' : ''}. Diese Werte sind dann Mindestwerte.` : '';
+  return `<div class="preview"><strong>Pro 100 g:</strong> ${fmtNum(calc.per100.kcal)} kcal, ${fmtNum(calc.per100.protein, 1)} g Eiweiß, ${fmtNum(calc.per100.fat, 1)} g Fett, ${fmtNum(calc.per100.carbs, 1)} g Kohlenhydrate.<br>Gesamtgewicht ${fmtNum(Math.round(calc.total))} g.${portion}${inc}</div>`;
+}
+function openRecipeEditor(arg) {
+  let d;
+  if (arg && typeof arg === 'object') d = arg;
+  else if (arg) {
+    const r = S.lib.custom.find(x => x.id === arg && x.source === 'recipe'); if (!r) return;
+    d = { id: r.id, name: r.name, ingredients: (r.ingredients || []).map(i => ({ ...i })), total: r.recipeTotal ? String(Math.round(r.recipeTotal)) : '', portions: r.portions ? String(r.portions) : '' };
+  } else d = { id: '', name: '', ingredients: [], total: '', portions: '' };
+  S.draft = d; S.modal = { type: 'recipe' };
+  const rows = d.ingredients.map((i, idx) => `<div class="ing"><span class="nm">${esc(i.name)}</span>
+    <label class="gram"><input type="number" min="1" max="20000" step="1" value="${esc(Math.round(i.grams))}" data-ing-grams="${idx}" aria-label="Menge in Gramm für ${esc(i.name)}"> g</label>
+    <button class="x" type="button" data-action="ing-remove" data-idx="${idx}" aria-label="${esc(i.name)} entfernen">×</button></div>`).join('');
+  $('#modal-root').innerHTML = modalShell(d.id ? 'Rezept bearbeiten' : 'Neues Rezept', 'Aus Zutaten zusammengesetzt', `
+    <form data-form="recipe-editor">
+      <div class="field"><label for="rn">Name</label><input id="rn" name="name" type="text" value="${esc(d.name)}" required maxlength="120"></div>
+      <h3 style="font-size:.95rem;margin:6px 0">Zutaten</h3>
+      <div id="ings">${rows || '<p class="hint">Noch keine Zutaten.</p>'}</div>
+      <p style="margin:8px 0"><button class="btn ghost small" type="button" data-action="ing-add">Zutat hinzufügen</button></p>
+      <div class="fgrid"><div class="field"><label for="rt">Fertiges Gewicht in g (optional)</label><input id="rt" name="total" type="text" inputmode="decimal" value="${esc(d.total)}" placeholder="Summe der Zutaten"></div>
+        <div class="field"><label for="rp">Portionen (optional)</label><input id="rp" name="portions" type="text" inputmode="decimal" value="${esc(d.portions)}"></div></div>
+      <p class="hint">Das fertige Gewicht ist wichtig, wenn beim Kochen Wasser verdampft. Wiege dazu das fertige Gericht.</p>
+      <div id="rpreview">${draftPreview(d)}</div>
+      <button class="btn" type="submit">Speichern</button>
+    </form>`);
+}
+function syncDraft() {
+  const f = $('[data-form="recipe-editor"]'); if (!f || !S.draft) return;
+  S.draft.name = f.elements.name.value;
+  S.draft.total = f.elements.total.value;
+  S.draft.portions = f.elements.portions.value;
+  f.querySelectorAll('[data-ing-grams]').forEach(inp => {
+    const i = S.draft.ingredients[Number(inp.dataset.ingGrams)];
+    const g = parseDecimal(inp.value);
+    if (i && g && !Number.isNaN(g) && g > 0) i.grams = g;
+  });
+}
+
+/* ---------------------------------------------------------------------
+   Ereignisse
+   --------------------------------------------------------------------- */
+function authMsg(code) {
+  const m = {
+    'auth/invalid-credential': 'E-Mail oder Passwort stimmt nicht.', 'auth/wrong-password': 'E-Mail oder Passwort stimmt nicht.',
+    'auth/user-not-found': 'E-Mail oder Passwort stimmt nicht.', 'auth/email-already-in-use': 'Zu dieser E-Mail gibt es schon ein Konto. Melde dich an.',
+    'auth/weak-password': 'Das Passwort braucht mindestens 6 Zeichen.', 'auth/invalid-email': 'Diese E-Mail-Adresse ist ungültig.',
+    'auth/too-many-requests': 'Zu viele Versuche. Warte kurz und probiere es dann noch einmal.',
+    'auth/network-request-failed': 'Keine Verbindung. Prüfe dein Internet.'
+  };
+  return m[code] || 'Die Anmeldung hat nicht geklappt. Versuche es noch einmal.';
+}
+async function changeWeek(monday) {
+  S.monday = monday;
+  const dates = weekDates(monday);
+  S.selected = dates.includes(todayStr()) ? todayStr() : dates[0];
+  S.booting = false; renderAll();
+  await loadWeek(); renderAll();
+}
+async function copyText(text) {
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; } } catch { /* weiter */ }
+  try {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+  } catch { return false; }
+}
+function toggleFav(ref) {
+  return updateLib(l => {
+    const k = foodKey(ref), i = l.favorites.findIndex(f => foodKey(f) === k);
+    if (i >= 0) l.favorites.splice(i, 1); else l.favorites.unshift(ref);
+  });
+}
+const validQty = (q, max) => q !== null && !Number.isNaN(q) && q > 0 && q <= max;
+
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-action]'); if (!el) return;
+  const a = el.dataset.action;
+  switch (a) {
+    case 'page': {
+      S.page = el.dataset.page; renderAll();
+      if (S.page === 'history') ensureHistory();
+      break;
+    }
+    case 'select': S.selected = el.dataset.date; renderAll(); break;
+    case 'add': openAdd(el.dataset.date); break;
+    case 'close-modal': dismissModal(); break;
+    case 'goto-lib': closeModal(); S.page = 'lib'; renderAll(); break;
+    case 'tab': {
+      const m = S.modal; if (!m || m.type !== 'add') break;
+      const t = el.dataset.tab; m.tab = t; m.picked = null;
+      document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+      $('#pane-search').hidden = t !== 'search'; $('#pane-scan').hidden = t !== 'scan';
+      if (t !== 'scan') stopScan();
+      renderResults(); renderPending();
+      break;
+    }
+    case 'start-scan': startScan(); break;
+    case 'pick': { const m = S.modal; if (m && m.type === 'add') { m.picked = Number(el.dataset.idx); renderResults(); renderPending(); } break; }
+    case 'fav-toggle': { const m = S.modal; const f = m && m.shown[Number(el.dataset.idx)]; if (f) await toggleFav(f); break; }
+    case 'fav-item': {
+      const it = getDay(el.dataset.date).items.find(x => x.id === el.dataset.id);
+      if (it) await toggleFav(toFoodRef(it)); break;
+    }
+    case 'fav-remove': await updateLib(l => { l.favorites = l.favorites.filter(f => foodKey(f) !== el.dataset.key); }); break;
+    case 'add-pending': {
+      const m = S.modal; if (!m || m.type !== 'add' || m.picked == null) break;
+      const food = m.shown[m.picked]; const supp = food.source === 'supp';
+      const q = parseDecimal($('#pqty').value);
+      if (!validQty(q, supp ? 50 : 5000)) { toast(supp ? 'Gib eine Menge zwischen 0,5 und 50 ein.' : 'Gib eine Menge zwischen 1 und 5000 Gramm ein.'); break; }
+      const qty = supp ? q : Math.round(q);
+      if (m.mode === 'pick') { const cb = m.onPick; closeModal(); if (cb) cb(food, qty); break; }
+      const meal = supp ? 'erg' : ($('#pmeal') ? $('#pmeal').value : m.meal);
+      const time = $('#ptime') ? $('#ptime').value : '';
+      const item = makeItem(food, qty, meal, time);
+      const date = m.date;
+      m.picked = null; renderResults(); renderPending();
+      toast(`${food.name} ist im Plan.`);
+      await updateDay(date, d => { d.items.push(item); });
+      await updateLib(l => { l.recent = pushRecent(l.recent, toFoodRef(item)); });
+      break;
+    }
+    case 'remove': {
+      const { date, id } = el.dataset;
+      await updateDay(date, d => { d.items = d.items.filter(x => x.id !== id); }); break;
+    }
+    case 'edit-item': openEditItem(el.dataset.date, el.dataset.id); break;
+    case 'water': {
+      const ml = Number(el.dataset.ml);
+      await updateDay(el.dataset.date, d => { d.water = Math.max(0, (Number(d.water) || 0) + ml); }); break;
+    }
+    case 'sport-remove': {
+      const { date, id } = el.dataset;
+      await updateDay(date, d => { d.sport = d.sport.filter(s => s.id !== id); }); break;
+    }
+    case 'prev-week': changeWeek(addDays(S.monday, -7)); break;
+    case 'next-week': changeWeek(addDays(S.monday, 7)); break;
+    case 'today': changeWeek(mondayOf(new Date())); break;
+    case 'view': S.view = el.dataset.view; renderAll(); break;
+    case 'hist-range': S.hist.range = Number(el.dataset.range); ensureHistory(); break;
+    case 'shop-copy': {
+      const list = currentShopList(); const wk = fmtDate(S.monday);
+      const open = list.filter(e2 => !S.lib.shopChecked[shopKey(wk, e2.key)]);
+      const text = `Einkaufsliste ${weekLabel()}\n` + open.map(e2 => `- ${e2.name}: ${fmtAmount(e2.grams)}`).join('\n');
+      toast(await copyText(text) ? 'Liste kopiert.' : 'Kopieren hat nicht geklappt.'); break;
+    }
+    case 'settings': openSettings(); break;
+    case 'lib-new': {
+      const k = el.dataset.kind;
+      if (k === 'food') openFoodEditor(); else if (k === 'recipe') openRecipeEditor(); else if (k === 'supp') openSuppEditor();
+      break;
+    }
+    case 'lib-edit': {
+      const { kind, id } = el.dataset;
+      if (kind === 'food') openFoodEditor(id); else if (kind === 'recipe') openRecipeEditor(id); else if (kind === 'supp') openSuppEditor(id);
+      break;
+    }
+    case 'lib-delete': {
+      const { kind, id } = el.dataset;
+      const pool = kind === 'supp' ? S.lib.supplements : S.lib.custom;
+      const it = pool.find(x => x.id === id); if (!it) break;
+      if (!window.confirm(`„${it.name}“ löschen? Bereits eingetragene Mahlzeiten bleiben unverändert.`)) break;
+      const key = foodKey(it);
+      await updateLib(l => {
+        l.custom = l.custom.filter(x => x.id !== id); l.supplements = l.supplements.filter(x => x.id !== id);
+        l.favorites = l.favorites.filter(f => foodKey(f) !== key); l.recent = l.recent.filter(f => foodKey(f) !== key);
+      });
+      break;
+    }
+    case 'ing-add': {
+      syncDraft();
+      openAdd(S.selected, 'pick', (food, grams) => {
+        S.draft.ingredients.push({ name: food.name, source: food.source, code: food.code || '', grams, per100: food.per100 || {}, incomplete: food.incomplete || [] });
+        openRecipeEditor(S.draft);
+      });
+      break;
+    }
+    case 'ing-remove': {
+      syncDraft(); S.draft.ingredients.splice(Number(el.dataset.idx), 1); openRecipeEditor(S.draft); break;
+    }
+    case 'auth-toggle': S.authMode = S.authMode === 'login' ? 'signup' : 'login'; S.authError = ''; renderAll(); break;
+    case 'logout': closeModal(); try { await fb.authM.signOut(fb.auth); } catch (err) { console.error(err); } break;
+  }
+});
+
+document.addEventListener('submit', async e => {
+  const f = e.target.closest('[data-form]'); if (!f) return;
+  e.preventDefault();
+  const kind = f.dataset.form;
+  const data = Object.fromEntries(new FormData(f));
+  if (kind === 'search') doSearch(data.q || '');
+  else if (kind === 'code') doLookup(String(data.code || '').replace(/\D/g, ''));
+  else if (kind === 'settings') {
+    const w = Number(data.weight);
+    if (!(w >= 30 && w <= 250)) { toast('Gib ein Gewicht zwischen 30 und 250 kg ein.'); return; }
+    S.profile = { sex: data.sex === 'w' ? 'w' : 'm', weight: Math.round(w) };
+    closeModal(); renderAll();
+    try { await store.saveProfile(S.profile); } catch (err) { console.error(err); toast('Das Profil konnte nicht gespeichert werden.'); }
+  } else if (kind === 'auth') {
+    try {
+      S.authError = '';
+      if (S.authMode === 'login') await fb.authM.signInWithEmailAndPassword(fb.auth, data.email, data.password);
+      else await fb.authM.createUserWithEmailAndPassword(fb.auth, data.email, data.password);
+    } catch (err) { S.authError = authMsg(err.code); renderAll(); }
+  } else if (kind === 'weight') {
+    const w = parseDecimal(data.weight);
+    if (Number.isNaN(w) || (w !== null && !(w >= 20 && w <= 400))) { toast('Gib ein Gewicht zwischen 20 und 400 kg ein.'); return; }
+    await updateDay(data.date, d => { d.weight = w; });
+  } else if (kind === 'sport') {
+    const name = String(data.name || '').trim();
+    const mins = parseDecimal(data.minutes), kc = parseDecimal(data.kcal);
+    if (!name) return;
+    if (Number.isNaN(mins) || Number.isNaN(kc) || (mins !== null && mins <= 0) || (kc !== null && kc < 0)) { toast('Minuten und Kalorien müssen Zahlen sein.'); return; }
+    await updateDay(data.date, d => { d.sport.push({ id: uid(), name, minutes: mins, kcal: kc }); });
+  } else if (kind === 'edit-item') {
+    const m = S.modal; if (!m || m.type !== 'edit') return;
+    const it = getDay(m.date).items.find(x => x.id === m.id); if (!it) { closeModal(); return; }
+    const supp = it.kind === 'supp';
+    const q = parseDecimal(data.qty);
+    if (!validQty(q, supp ? 50 : 5000)) { showFormError(f, supp ? 'Gib eine Menge zwischen 0,5 und 50 ein.' : 'Gib eine Menge zwischen 1 und 5000 Gramm ein.'); return; }
+    const time = /^\d\d:\d\d$/.test(data.time || '') ? data.time : '';
+    const meal = supp ? 'erg' : (MEALS.some(x => x.id === data.meal) ? data.meal : it.meal);
+    const date = m.date, id = m.id;
+    closeModal();
+    await updateDay(date, d => { const x = d.items.find(y => y.id === id); if (x) { if (supp) x.qty = q; else x.grams = Math.round(q); x.meal = meal; x.time = time; } });
+  } else if (kind === 'food-editor') {
+    const name = String(data.name || '').trim();
+    if (!name) { showFormError(f, 'Gib einen Namen ein.'); return; }
+    const { per, bad } = readValueFields(data);
+    if (bad.length) { showFormError(f, `Das ist keine gültige Zahl: ${bad.map(labelOf).join(', ')}.`); return; }
+    const msg = validateFood(per, 'per100'); if (msg) { showFormError(f, msg); return; }
+    const portion = parseDecimal(data.portion);
+    if (Number.isNaN(portion) || (portion !== null && portion <= 0)) { showFormError(f, 'Die Portion muss eine Zahl über 0 sein.'); return; }
+    const nova = Number(data.nova) >= 1 && Number(data.nova) <= 4 ? Number(data.nova) : null;
+    const food = { id: data.id || uid(), source: 'custom', name, brand: String(data.brand || '').trim(), code: '', per100: per, nova, nutri: null, incomplete: [], portion: portion ? Math.round(portion) : null };
+    closeModal();
+    await updateLib(l => { const i = l.custom.findIndex(x => x.id === food.id); if (i >= 0) l.custom[i] = food; else l.custom.push(food); });
+  } else if (kind === 'supp-editor') {
+    const name = String(data.name || '').trim(), unit = String(data.unit || '').trim();
+    if (!name || !unit) { showFormError(f, 'Gib Name und Einheit ein.'); return; }
+    const { per, bad } = readValueFields(data);
+    if (bad.length) { showFormError(f, `Das ist keine gültige Zahl: ${bad.map(labelOf).join(', ')}.`); return; }
+    const msg = validateFood(per, 'unit'); if (msg) { showFormError(f, msg); return; }
+    const perUnit = {}; for (const k of ALL_KEYS) if (per[k] != null) perUnit[k] = per[k];
+    const supp = { id: data.id || uid(), source: 'supp', name, unit, perUnit };
+    closeModal();
+    await updateLib(l => { const i = l.supplements.findIndex(x => x.id === supp.id); if (i >= 0) l.supplements[i] = supp; else l.supplements.push(supp); });
+  } else if (kind === 'recipe-editor') {
+    syncDraft(); const d = S.draft;
+    const name = String(d.name || '').trim();
+    if (!name) { showFormError(f, 'Gib einen Namen ein.'); return; }
+    if (!d.ingredients.length) { showFormError(f, 'Füge mindestens eine Zutat hinzu.'); return; }
+    const total = parseDecimal(d.total), portions = parseDecimal(d.portions);
+    if (Number.isNaN(total) || (total !== null && total <= 0)) { showFormError(f, 'Das fertige Gewicht muss eine Zahl über 0 sein.'); return; }
+    if (Number.isNaN(portions) || (portions !== null && portions < 1)) { showFormError(f, 'Die Zahl der Portionen muss mindestens 1 sein.'); return; }
+    const calc = computeRecipe(d.ingredients, total);
+    const food = {
+      id: d.id || uid(), source: 'recipe', name, brand: '', code: '', per100: calc.per100, nova: null, nutri: null,
+      incomplete: calc.incomplete, ingredients: d.ingredients, recipeTotal: calc.total,
+      portions: portions ? Math.round(portions) : null, portion: portions ? Math.round(calc.total / portions) : null
+    };
+    S.draft = null; closeModal();
+    await updateLib(l => { const i = l.custom.findIndex(x => x.id === food.id); if (i >= 0) l.custom[i] = food; else l.custom.push(food); });
+  }
+});
+
+document.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.matches('input[data-qty]')) {
+    const { date, qty: id } = t.dataset;
+    const it = getDay(date).items.find(x => x.id === id); if (!it) return;
+    const supp = it.kind === 'supp';
+    const q = parseDecimal(t.value);
+    if (!validQty(q, supp ? 50 : 5000)) { toast(supp ? 'Gib eine Menge zwischen 0,5 und 50 ein.' : 'Gib eine Menge zwischen 1 und 5000 Gramm ein.'); renderAll(); return; }
+    await updateDay(date, d => { const x = d.items.find(y => y.id === id); if (x) { if (supp) x.qty = q; else x.grams = Math.round(q); } });
+  } else if (t.matches('input[data-time]')) {
+    const { date, time: id } = t.dataset;
+    await updateDay(date, d => { const x = d.items.find(y => y.id === id); if (x) x.time = /^\d\d:\d\d$/.test(t.value) ? t.value : ''; });
+  } else if (t.id === 'pmeal' && S.modal && S.modal.type === 'add') {
+    const m = S.modal; m.meal = t.value; m.mealTouched = true;
+    if (!m.timeTouched) { m.time = (MEALS.find(x => x.id === t.value) || {}).def || m.time; const ti = $('#ptime'); if (ti) ti.value = m.time; }
+  } else if (t.id === 'ptime' && S.modal && S.modal.type === 'add') {
+    const m = S.modal; m.time = t.value; m.timeTouched = true;
+    if (!m.mealTouched && t.value) { m.meal = mealForTime(t.value); const ms = $('#pmeal'); if (ms) ms.value = m.meal; }
+  } else if (t.matches('input[data-shop]')) {
+    const k = shopKey(fmtDate(S.monday), t.dataset.shop), on = t.checked;
+    await updateLib(l => { if (on) l.shopChecked[k] = true; else delete l.shopChecked[k]; });
+  } else if (t.matches('input[data-shopopt]')) {
+    S.shopFromToday = t.checked; renderAll();
+  } else if (t.matches('select[data-hist]')) {
+    S.hist.metric = t.value; renderAll();
+  } else if (t.matches('input[data-ing-grams], #rt, #rp') && S.modal && S.modal.type === 'recipe') {
+    syncDraft(); const p = $('#rpreview'); if (p) p.innerHTML = draftPreview(S.draft);
+  }
+});
+
+/* Hover und Tastaturfokus im Diagramm */
+const tipEl = () => $('#tip');
+function showTip(target, x, y) {
+  const t = tipEl(); t.textContent = target.getAttribute('data-tip'); t.hidden = false;
+  const r = t.getBoundingClientRect();
+  t.style.left = Math.max(8, Math.min(window.innerWidth - r.width - 8, x + 12)) + 'px';
+  t.style.top = Math.max(8, y - r.height - 12) + 'px';
+}
+document.addEventListener('pointermove', e => {
+  const h = e.target.closest && e.target.closest('.hit');
+  if (h) showTip(h, e.clientX, e.clientY); else tipEl().hidden = true;
+});
+document.addEventListener('focusin', e => {
+  const h = e.target.closest && e.target.closest('.hit');
+  if (h) { const r = h.getBoundingClientRect(); showTip(h, r.left + r.width / 2, r.top + 20); }
+});
+document.addEventListener('focusout', e => { if (e.target.closest && e.target.closest('.hit')) tipEl().hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.modal) dismissModal(); });
+
+/* ---------------------------------------------------------------------
+   Start
+   --------------------------------------------------------------------- */
+async function boot() {
+  renderAll();
+  if (!FIREBASE_READY && FIREBASE_CONFIG.apiKey && !String(FIREBASE_CONFIG.apiKey).startsWith('DEIN')) {
+    S.initError = `Die Firebase-Daten sind noch nicht vollständig. Es fehlt: ${FIREBASE_MISSING.join(', ')}. Bis dahin läufst du im Testmodus.`;
+  }
+  if (FIREBASE_READY) {
+    try {
+      await initFirebase();
+      store = fbStore; S.mode = 'firebase';
+      fb.authM.onAuthStateChanged(fb.auth, async u => {
+        S.user = u; S.uid = u ? u.uid : null; S.days = {}; S.lib = emptyLib();
+        if (u) await loadAll();
+        S.booting = false; renderAll();
+      });
+      return;
+    } catch (e) {
+      console.error(e);
+      S.initError = 'Firebase konnte nicht geladen werden. Du bist im Testmodus, die Daten bleiben nur in diesem Browser.';
+      S.mode = 'local'; store = localStore;
+    }
+  }
+  await loadAll(); S.booting = false; renderAll();
+}
+boot();
+</script>
+</body>
+</html>
