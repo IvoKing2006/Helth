@@ -504,7 +504,9 @@ const NUTRIENTS = [
   { key: 'salt', label: 'Salz', unit: 'g', group: 'Makronährstoffe', dec: 1, ref: { m: 6, w: 6 }, type: 'max' },
   { key: 'satfat', label: 'Gesättigte Fette', unit: 'g', group: 'Fette und mehr', dec: 1 },
   { key: 'chol', label: 'Cholesterin', unit: 'mg', group: 'Fette und mehr', dec: 0 },
-  { key: 'omega3', label: 'Omega-3-Fettsäuren', unit: 'g', group: 'Fette und mehr', dec: 2 },
+  { key: 'omega3', label: 'Omega-3 gesamt', unit: 'g', group: 'Fette und mehr', dec: 2 },
+  { key: 'ala', label: 'Omega-3 ALA (pflanzlich)', unit: 'g', group: 'Fette und mehr', dec: 1, ref: { m: 1.4, w: 1.1 } },
+  { key: 'epadha', label: 'Omega-3 EPA + DHA (Fisch)', unit: 'mg', group: 'Fette und mehr', dec: 0, ref: { m: 250, w: 250 } },
   { key: 'caffeine', label: 'Koffein', unit: 'mg', group: 'Fette und mehr', dec: 0, ref: { m: 400, w: 400 }, type: 'max' },
   { key: 'vitA', label: 'Vitamin A', unit: 'µg', group: 'Vitamine', dec: 0, ref: { m: 1000, w: 800 } },
   { key: 'vitC', label: 'Vitamin C', unit: 'mg', group: 'Vitamine', dec: 0, ref: { m: 110, w: 95 } },
@@ -543,7 +545,7 @@ function computeTargets(p) {
     if (n.key === 'protein') out.protein = { value: Math.round((Number(p && p.proteinPerKg) > 0 ? Number(p.proteinPerKg) : 0.8) * w), type: 'min' };
     else if (n.ref) out[n.key] = { value: n.ref[sex], type: n.type || 'min' };
   }
-  return out;
+  return addOmegaTarget(out, p);
 }
 
 /* Open Food Facts liefert Vitamine/Mineralstoffe in Gramm pro 100 g -> in mg bzw. µg umrechnen */
@@ -568,6 +570,9 @@ function fromOFF(p) {
     const v = num(nu[key + '_100g']);
     per100[k] = v === null ? null : v * mult;
   }
+  per100.ala = num(nu['alpha-linolenic-acid_100g']);
+  { const epa = num(nu['eicosapentaenoic-acid_100g']), dha = num(nu['docosahexaenoic-acid_100g']);
+    per100.epadha = (epa === null && dha === null) ? null : ((epa || 0) + (dha || 0)) * 1000; }
   if (per100.kcal === null) { const kj = num(nu['energy_100g']); if (kj !== null) per100.kcal = kj / 4.184; }
   const salt = num(nu['salt_100g']);
   if (salt !== null) per100.salt = salt;
@@ -611,6 +616,10 @@ function fromUSDA(f) {
   }
   const o3 = USDA_OMEGA3.map(no => byNo[no]).filter(Boolean);
   per100.omega3 = o3.length ? o3.reduce((a, e) => a + e.v, 0) : null;
+  { const pick = nos => { const h = nos.map(no => byNo[no]).find(Boolean); return h ? h.v : null; };
+    per100.ala = pick(['851', '619']);
+    const epa = pick(['629']), dha = pick(['621']);
+    per100.epadha = (epa === null && dha === null) ? null : ((epa || 0) + (dha || 0)) * 1000; }
   const kc = ['208', '957', '958'].map(no => byNo[no]).find(e => e && e.unit === 'KCAL');
   per100.kcal = kc ? kc.v : null;
   per100.salt = byNo['307'] ? byNo['307'].v * 2.5 / 1000 : null;
@@ -906,6 +915,13 @@ function kcalTarget(p, sportKcal = 0) {
   return Math.round((bmr * act + g.delta) / 10) * 10 + Math.round(Math.max(0, Number(sportKcal) || 0));
 }
 
+/* ALA-Richtwert: 0,5 % der Tagesenergie (D-A-CH/EFSA). Ohne Kalorienziel: 2.500 kcal (Mann) bzw. 2.000 kcal (Frau) */
+function addOmegaTarget(out, p) {
+  const kcal = kcalTarget(p) || (p && p.sex === 'w' ? 2000 : 2500);
+  if (out.ala) out.ala = { value: Math.round(kcal * 0.005 / 9 * 10) / 10, type: 'min' };
+  return out;
+}
+
 /* Nährstoff-Score 0 bis 100: Durchschnitt der Abdeckung aller Vitamine und Mineralstoffe, jede höchstens 100 % */
 function nutrientScore(tot, targets) {
   const keys = MICRO_KEYS.filter(k => targets[k] && targets[k].type !== 'max');
@@ -918,7 +934,7 @@ function nutrientScore(tot, targets) {
   return { score: Math.round(s / keys.length * 100), covered, total: keys.length };
 }
 
-const GAP_KEYS = ['protein', 'fiber', ...MICRO_KEYS];
+const GAP_KEYS = ['protein', 'fiber', 'ala', 'epadha', ...MICRO_KEYS];
 /* Hat überhaupt ein Eintrag eine Angabe zu diesem Nährstoff? Sonst ist er unbekannt, nicht "zu niedrig". */
 const hasData = (items, k) => items.some(it => num(valuesOf(it)[k]) !== null);
 function findGaps(tot, targets, n = 3, items = null) {
@@ -976,7 +992,9 @@ const GOOD_SOURCES = {
   fe: 'Hülsenfrüchte, rotes Fleisch, Haferflocken, Kürbiskerne (mit Vitamin C besser aufgenommen)', mg: 'Nüsse, Kerne, Vollkorn, Hülsenfrüchte',
   zn: 'Fleisch, Käse, Haferflocken, Kürbiskerne', k: 'Kartoffeln, Bananen, Hülsenfrüchte, Gemüse', se: 'Paranüsse, Fisch, Eier',
   i: 'Jodsalz, Seefisch, Milchprodukte', p: 'Milchprodukte, Fleisch, Nüsse, Vollkorn', cu: 'Nüsse, Kakao, Vollkorn, Hülsenfrüchte',
-  mn: 'Haferflocken, Nüsse, Vollkorn, Tee'
+  mn: 'Haferflocken, Nüsse, Vollkorn, Tee',
+  ala: 'Leinöl, Leinsamen, Chiasamen, Walnüsse, Rapsöl',
+  epadha: 'fetter Seefisch wie Lachs, Hering, Makrele oder Sardinen; für Vegetarier Algenöl'
 };
 
 /* Wochen-Check: Tage mit Einträgen dieser Woche, verglichen mit der Vorwoche */
@@ -1298,7 +1316,7 @@ const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_gro
    Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
    Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
    und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.8';
 const OFF_FIELDS_BASIC = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
 const offCache = new Map();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
