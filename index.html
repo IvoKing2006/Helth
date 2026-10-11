@@ -359,7 +359,11 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 #results h3{font-size:.85rem;color:var(--muted);font-weight:700;margin:14px 0 2px}
 .res{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
 .res .iname{min-width:0;flex:1}
-.res.picked{background:var(--okbg);margin:0 -10px;padding:10px;border-radius:12px;border-top-color:transparent}
+.res.picked{background:var(--okbg);margin:0 -10px;padding:10px;border-radius:12px;border-top-color:transparent;flex-wrap:wrap}
+.nutdetail{flex:0 0 100%;min-width:0;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);cursor:auto}
+.nutdetail summary{cursor:pointer;font-weight:650;font-size:.92rem}
+.ndrow{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--line);font-size:.9rem}
+.ndrow span:last-child{text-align:right;white-space:nowrap}
 .resact{display:flex;align-items:center;gap:2px;flex:none}
 .star[aria-pressed="true"]{color:var(--nova3)}
 #reader{width:100%;max-width:360px;margin:0 auto 10px;border-radius:14px;overflow:hidden}
@@ -2000,7 +2004,34 @@ function resRowHTML(it, i) {
   const sub = it.nameEn ? `<span class="ibrand">${esc(it.nameEn)}</span>` : (it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : '');
   return `<li class="res ${picked ? 'picked' : ''}" data-action="pick" data-idx="${i}">${thumbHTML(it, 'md')}<div class="iname">${sourceBadge(it)}<strong>${esc(it.name)}</strong>${sub}<div class="chips">${chips}</div></div>
     <div class="resact"><button class="x star" data-action="fav-toggle" data-idx="${i}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten hinzufügen'}">${fav ? ICON.starOn : ICON.star}</button>
-      <button class="icon-btn sm ${picked ? 'accent' : ''}" data-action="pick" data-idx="${i}" aria-label="${esc(it.name)} auswählen" aria-pressed="${picked}">${picked ? ICON.checkSm : ICON.plus}</button></div></li>`;
+      <button class="icon-btn sm ${picked ? 'accent' : ''}" data-action="pick" data-idx="${i}" aria-label="${esc(it.name)} auswählen" aria-pressed="${picked}">${picked ? ICON.checkSm : ICON.plus}</button></div>${picked ? detailBlock(it) : ''}</li>`;
+}
+/* Alle Nährwerte eines gewählten Treffers für die eingestellte Menge (Werte pro 100 g bzw. pro Stück, umgerechnet) */
+function pickedQtyFor(it) {
+  const m = S.modal;
+  return m && m.qty > 0 ? m.qty : (it.source === 'supp' ? 1 : Math.round(it.portion || 100));
+}
+function foodDetailHTML(food, qty) {
+  const supp = food.source === 'supp';
+  const vals = (supp ? food.perUnit : food.per100) || {};
+  const f = supp ? (Number(qty) || 0) : (Number(qty) || 0) / 100;
+  const inc = food.incomplete || [];
+  const none = supp ? 'nicht enthalten' : 'keine Daten';
+  const row = (label, key, dec, unit) => {
+    const v = num(vals[key]);
+    return `<div class="ndrow"><span>${label}</span>${v === null ? `<span class="muted">${none}</span>` : `<span>${inc.includes(key) ? approxMark(true) : ''}<b>${fmtNum(v * f, dec)}</b> ${unit}</span>`}</div>`;
+  };
+  const unsat = num(vals.fat) !== null && num(vals.satfat) !== null
+    ? `<div class="ndrow"><span>davon ungesättigt</span><span><b>${fmtNum(Math.max(0, vals.fat - vals.satfat) * f, 1)}</b> g</span></div>` : '';
+  let html = `<h3 class="ng">Energie</h3>${row('Kalorien', 'kcal', 0, 'kcal')}`;
+  for (const g of GROUPS) {
+    html += `<h3 class="ng">${g}</h3>` + NUTRIENTS.filter(n => n.group === g).map(n => row(n.label, n.key, n.dec, n.unit) + (n.key === 'satfat' ? unsat : '')).join('');
+  }
+  return html;
+}
+function detailBlock(it) {
+  const q = pickedQtyFor(it), supp = it.source === 'supp';
+  return `<details class="nutdetail" open><summary>Alle Werte für <span id="pdq">${fmtNum(q, 1)}</span> ${supp ? esc(it.unit || 'Stk') : 'g'}</summary><div id="pdetail">${foodDetailHTML(it, q)}</div></details>`;
 }
 function renderResults() {
   const m = S.modal; if (!m || m.type !== 'add') return;
@@ -2070,7 +2101,7 @@ function renderPending() {
 async function doSearch(q) {
   const m = S.modal; if (!m || m.type !== 'add') return;
   q = q.trim(); if (q.length < 2) return;
-  m.query = q; m.results = []; m.picked = null; m.loading = true; m.notes = []; m.showAll = false;
+  m.query = q; m.results = []; m.picked = null; m.qty = null; m.loading = true; m.notes = []; m.showAll = false;
   renderPending(); renderResults();
   const en = translateSmart(q);
   const [off, usda] = await Promise.allSettled([searchOFF(q), searchUSDA(en)]);
@@ -2088,7 +2119,7 @@ async function doSearch(q) {
 }
 async function doLookup(code) {
   const m = S.modal; if (!m || m.type !== 'add') return;
-  m.query = code; m.results = []; m.picked = null; m.loading = true; m.notes = [];
+  m.query = code; m.results = []; m.picked = null; m.qty = null; m.loading = true; m.notes = [];
   renderPending(); renderResults();
   try {
     const it = await lookupOFF(code.trim());
@@ -2372,7 +2403,7 @@ document.addEventListener('click', async e => {
     case 'start-scan': startScan(); break;
     case 'show-all': { const m = S.modal; if (m && m.type === 'add') { m.showAll = true; renderResults(); } break; }
     case 'show-user': { const m = S.modal; if (m && m.type === 'add') { m.showUser = true; renderResults(); } break; }
-    case 'pick': { const m = S.modal; if (m && m.type === 'add') { m.picked = Number(el.dataset.idx); renderResults(); renderPending(); } break; }
+    case 'pick': { if (e.target.closest('.nutdetail')) break; const m = S.modal; if (m && m.type === 'add') { m.picked = Number(el.dataset.idx); m.qty = null; renderResults(); renderPending(); } break; }
     case 'fav-toggle': { const m = S.modal; const f = m && m.shown[Number(el.dataset.idx)]; if (f) await toggleFav(f); break; }
     case 'fav-item': {
       const it = getDay(el.dataset.date).items.find(x => x.id === el.dataset.id);
@@ -2578,6 +2609,9 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'pqty' && S.modal && S.modal.type === 'add' && S.modal.picked != null) {
     const p = $('#pprev'); if (p) p.textContent = pendingPreview(S.modal.shown[S.modal.picked], parseDecimal(t.value) || 0);
+    const q = parseDecimal(t.value) || 0, d = $('#pdetail');
+    S.modal.qty = q > 0 ? q : null;
+    if (d) { d.innerHTML = foodDetailHTML(S.modal.shown[S.modal.picked], q); const l = $('#pdq'); if (l) l.textContent = fmtNum(q, 1); }
   }
 });
 
