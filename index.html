@@ -191,6 +191,19 @@ svg{display:block}
 .rows{list-style:none;margin:4px 0 0;padding:0}
 .row{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;border-radius:12px;padding:8px 6px;margin:0 -6px;text-align:left;color:inherit;width:calc(100% + 12px)}
 .row:hover{background:var(--surface2)}
+.thumb{position:relative;flex:none;width:40px;height:40px;border-radius:11px;background:var(--surface2);overflow:hidden;display:grid;place-items:center}
+.thumb::before{content:attr(data-l);font-weight:800;font-stretch:115%;color:var(--muted);font-size:1rem}
+.thumb.fresh{background:color-mix(in srgb,var(--micro) 22%,var(--surface2))}
+.thumb.fresh::before{color:var(--text)}
+.thumb.supp{background:color-mix(in srgb,var(--protein) 22%,var(--surface2))}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
+.thumb.lg{width:56px;height:56px;border-radius:14px}
+.thumb.md{width:48px;height:48px;border-radius:13px}
+.res{cursor:pointer}
+.res:hover{background:var(--surface2);margin:0 -10px;padding:10px;border-radius:12px;border-top-color:transparent}
+.thumb.lg::before{font-size:1.3rem}
+.photo{display:grid;place-items:center;background:#fff;border-radius:16px;margin:0 0 12px;padding:8px;max-height:160px;overflow:hidden}
+.photo img{max-width:100%;max-height:144px;object-fit:contain}
 .rname{flex:1;min-width:0}
 .rn{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rname small{display:block;color:var(--muted);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -295,7 +308,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 .librow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
 .librow .iname{flex:1 1 200px;min-width:0}
 .librow .acts{display:flex;gap:6px}
-.iname strong{font-weight:650;overflow-wrap:anywhere}
+.iname strong{font-weight:650;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
 .ibrand{color:var(--muted);font-size:.85rem;display:block}
 .pgrid{display:grid;gap:4px 14px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 .calc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
@@ -328,14 +341,19 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 .results{list-style:none;margin:0;padding:0}
 #results h3{font-size:.85rem;color:var(--muted);font-weight:700;margin:14px 0 2px}
 .res{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}
-.res .iname{min-width:0}
+.res .iname{min-width:0;flex:1}
 .res.picked{background:var(--okbg);margin:0 -10px;padding:10px;border-radius:12px;border-top-color:transparent}
 .resact{display:flex;align-items:center;gap:2px;flex:none}
 .star[aria-pressed="true"]{color:var(--nova3)}
 #reader{width:100%;max-width:360px;margin:0 auto 10px;border-radius:14px;overflow:hidden}
 .pending{border-top:1px solid var(--line);padding:12px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface)}
-.pending .pname{flex:1 1 100%;font-weight:700;overflow-wrap:anywhere}
-.pending .pprev{flex:1 1 100%;color:var(--muted);font-size:.86rem;margin-top:-6px}
+.pending{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"t n n" "t p p" "q q b";column-gap:12px;row-gap:6px}
+.pending[hidden]{display:none!important}
+.pending .thumb{grid-area:t;align-self:start}
+.pending .pname{grid-area:n;font-weight:700;overflow-wrap:anywhere}
+.pending .pprev{grid-area:p;color:var(--muted);font-size:.86rem}
+.pending .gram{grid-area:q}
+.pending .btn.primary{grid-area:b;margin-left:0}
 .gram{display:flex;align-items:center;gap:6px;color:var(--muted)}
 .gram input{width:6.5em;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;text-align:right;background:var(--surface2);min-height:44px}
 .pending .btn.primary{margin-left:auto}
@@ -377,8 +395,8 @@ details.fd summary{cursor:pointer;font-weight:700}
 .boot{min-height:100vh;display:grid;place-items:center}
 .boot svg{width:64px;height:64px;animation:spin 1.2s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:40;max-width:90vw;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-@media(min-width:900px){.toast{bottom:24px}}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:40;max-width:90vw;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -551,7 +569,8 @@ function fromOFF(p) {
     source: 'off', code: String(p.code || ''), name,
     brand: String(p.brands || '').split(',')[0].trim(),
     per100, nova: nova >= 1 && nova <= 4 ? nova : null,
-    nutri: ['a', 'b', 'c', 'd', 'e'].includes(grade) ? grade : null
+    nutri: ['a', 'b', 'c', 'd', 'e'].includes(grade) ? grade : null,
+    img: safeImg(p.image_front_small_url || p.image_small_url || p.image_front_url)
   };
 }
 
@@ -737,7 +756,7 @@ function toFoodRef(it) {
   const r = {
     source: it.source, code: it.code || '', id: it.refId || '', name: it.name, brand: it.brand || '',
     per100: it.per100 || {}, nova: it.nova ?? null, nutri: it.nutri ?? null, incomplete: it.incomplete || [],
-    portion: it.portion || null
+    portion: it.portion || null, img: safeImg(it.img)
   };
   if (it.ingredients) { r.ingredients = it.ingredients; r.recipeTotal = it.recipeTotal; }
   return r;
@@ -752,7 +771,7 @@ function makeItem(food, qty, meal, time) {
   const base = {
     id: uid(), kind: supp ? 'supp' : 'food', name: food.name, brand: food.brand || '',
     source: food.source, code: food.code || '', refId: food.id || '', meal, time: time || '',
-    nova: food.nova ?? null, nutri: food.nutri ?? null
+    nova: food.nova ?? null, nutri: food.nutri ?? null, img: safeImg(food.img)
   };
   if (supp) return { ...base, qty, unit: food.unit || 'Stk', perUnit: food.perUnit || {} };
   const it = { ...base, grams: qty, per100: food.per100 || {}, incomplete: food.incomplete || [], portion: food.portion || null };
@@ -841,6 +860,12 @@ function niceMax(v) {
   const n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
   return n * p;
 }
+/* Nur Bilder von Open Food Facts über https zulassen; alles andere wird verworfen */
+function safeImg(u) {
+  const s = String(u || '').trim();
+  return /^https:\/\/([a-z0-9-]+\.)*openfoodfacts\.(org|net)\/[^\s"'<>]+$/i.test(s) ? s : null;
+}
+
 /* ---- Ab hier: Erweiterungen (Ziele, Score, Lücken, Vorschläge, Wochen-Check, Vorlagen, deutsche Namen) ---- */
 const ACTIVITY = [
   { v: 1.3, label: 'Meist sitzend (Büro, Uni, Schule)' },
@@ -1180,7 +1205,7 @@ async function fetchJson(url, ms = 15000) {
     return await r.json();
   } finally { clearTimeout(t); }
 }
-const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
+const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade,image_front_small_url,image_small_url,image_front_url';
 
 async function searchOFF(q) {
   const base = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${OFF_FIELDS}`;
@@ -1227,6 +1252,7 @@ const ICON = {
   starOn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>',
   warn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5L2.5 20h19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.2" fill="currentColor"/></svg>',
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  checkSm: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.1 6.4 6.4 2.1-6.4 2.1L12 19.5l-2.1-6.4L3.5 11l6.4-2.1z" fill="currentColor"/></svg>',
   logo: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--energy)" stroke-width="5" stroke-linecap="round" stroke-dasharray="94 120" transform="rotate(-90 24 24)"/><circle cx="24" cy="24" r="12" fill="none" stroke="var(--protein)" stroke-width="5" stroke-linecap="round" stroke-dasharray="52 76" transform="rotate(-90 24 24)"/><circle cx="24" cy="24" r="5" fill="var(--micro)"/></svg>'
 };
@@ -1242,6 +1268,13 @@ const NOVA_TXT = { 1: 'unverarbeitet', 2: 'verarbeitete Zutat', 3: 'verarbeitet'
 const novaPill = n => n ? `<span class="nova n${n}" title="Nova ${n}: ${NOVA_TXT[n]}">Nova ${n}</span>` : '';
 const nutriPill = g => g ? `<span class="ns ns-${g}" title="Nutri-Score">Nutri ${g.toUpperCase()}</span>` : '';
 const approxMark = on => on ? '<abbr title="Bei manchen Einträgen fehlt diese Angabe. Der echte Wert ist vermutlich höher.">≈</abbr> ' : '';
+/* Vorschaubild: Foto von Open Food Facts, sonst Feld mit Anfangsbuchstabe (bleibt auch, wenn das Foto nicht lädt) */
+function thumbHTML(food, size = '') {
+  const letter = esc((String(food.name || '?').trim()[0] || '?').toUpperCase());
+  const kind = food.source === 'supp' || food.kind === 'supp' ? 'supp' : food.source === 'usda' ? 'fresh' : '';
+  const img = safeImg(food.img);
+  return `<span class="thumb ${size} ${kind}" data-l="${letter}" aria-hidden="true">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</span>`;
+}
 const qtyText = (food, qty) => food.source === 'supp' || food.kind === 'supp' ? `${fmtNum(qty, 1)} ${esc(food.unit || 'Stk')}` : `${fmtNum(qty)} g`;
 function itemKcal(it) { if (it.kind === 'supp') return null; const v = num(valuesOf(it).kcal); return v == null ? null : v * itemFactor(it); }
 
@@ -1334,7 +1367,7 @@ function gapsHTML(date, day, tot, targets) {
 function itemRow(it, date) {
   const kc = itemKcal(it);
   const meta = [qtyText(it, it.kind === 'supp' ? it.qty : it.grams), it.time ? esc(it.time) : '', it.brand ? esc(it.brand) : ''].filter(Boolean).join(' · ');
-  return `<li><button class="row" data-action="edit-item" data-date="${date}" data-id="${esc(it.id)}"><span class="rname"><span class="rn">${esc(it.name)}</span><small>${meta}</small></span>${novaPill(it.nova)}<span class="rk">${kc != null ? `${fmtNum(kc)}<small> kcal</small>` : ''}</span></button></li>`;
+  return `<li><button class="row" data-action="edit-item" data-date="${date}" data-id="${esc(it.id)}">${thumbHTML(it)}<span class="rname"><span class="rn">${esc(it.name)}</span><small>${meta}</small></span>${novaPill(it.nova)}<span class="rk">${kc != null ? `${fmtNum(kc)}<small> kcal</small>` : ''}</span></button></li>`;
 }
 function mealsHTML(date, day) {
   const items = sortItems(day.items);
@@ -1586,7 +1619,7 @@ function libRowHTML(it, kind) {
   const del = kind === 'fav' ? `<button class="btn small danger" data-action="fav-remove" data-key="${esc(foodKey(it))}">Entfernen</button>`
     : `<button class="btn small danger" data-action="lib-delete" data-kind="${kind}" data-id="${esc(it.id)}">Löschen</button>`;
   const details = kind === 'tpl' ? `<span class="ibrand">${it.items.map(x => esc(x.ref.name)).join(', ')}</span>` : (it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : '');
-  return `<div class="librow"><div class="iname"><strong>${esc(it.name)}</strong>${details}<div class="chips">${meta}</div></div><div class="acts">${edit}${del}</div></div>`;
+  return `<div class="librow">${kind === 'tpl' ? '' : thumbHTML(it)}<div class="iname"><strong>${esc(it.name)}</strong>${details}<div class="chips">${meta}</div></div><div class="acts">${edit}${del}</div></div>`;
 }
 function libHTML() {
   const foods = S.lib.custom.filter(x => x.source === 'custom'), recipes = S.lib.custom.filter(x => x.source === 'recipe');
@@ -1708,7 +1741,7 @@ function openAdd(date, opts = {}) {
   $('#modal-root').innerHTML = modalShell(mode === 'pick' ? 'Zutat hinzufügen' : 'Essen eintragen', mode === 'pick' ? 'Für dein Rezept' : dateLabel(date), `
     <div class="tabs" role="tablist">${tabs.map(([id, l]) => `<button role="tab" id="t-${id}" data-action="tab" data-tab="${id}" aria-selected="${id === tab}">${l}</button>`).join('')}</div>
     ${when}
-    <div id="pane-search" ${tab !== 'search' ? 'hidden' : ''}><form class="row2" data-form="search"><input name="q" type="search" enterkeyhint="search" placeholder="Skyr, Haferflocken, Hähnchen …" aria-label="Lebensmittel suchen" autocomplete="off" required minlength="2"><button class="btn primary" type="submit">Suchen</button></form></div>
+    <div id="pane-search" ${tab !== 'search' ? 'hidden' : ''}><form class="row2" data-form="search"><input name="q" type="search" enterkeyhint="search" placeholder="Skyr, Alpro, Hähnchen …" aria-label="Lebensmittel suchen" autocomplete="off" required minlength="2"><button class="btn primary" type="submit">Suchen</button></form></div>
     <div id="pane-scan" hidden><div id="reader"></div>
       <div class="row2"><button class="btn primary" data-action="start-scan" type="button">Kamera starten</button></div>
       <form class="row2" data-form="code"><input name="code" inputmode="numeric" pattern="[0-9]{8,14}" placeholder="Oder Barcode-Nummer eintippen" aria-label="Barcode-Nummer" required><button class="btn" type="submit">Laden</button></form>
@@ -1730,9 +1763,9 @@ function resRowHTML(it, i) {
   }
   const fav = isFavRef(it);
   const sub = it.nameEn ? `<span class="ibrand">${esc(it.nameEn)}</span>` : (it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : '');
-  return `<li class="res ${picked ? 'picked' : ''}"><div class="iname"><strong>${esc(it.name)}</strong>${sub}<div class="chips">${chips}</div></div>
+  return `<li class="res ${picked ? 'picked' : ''}" data-action="pick" data-idx="${i}">${thumbHTML(it, 'md')}<div class="iname"><strong>${esc(it.name)}</strong>${sub}<div class="chips">${chips}</div></div>
     <div class="resact"><button class="x star" data-action="fav-toggle" data-idx="${i}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten hinzufügen'}">${fav ? ICON.starOn : ICON.star}</button>
-      <button class="btn small ${picked ? 'primary' : ''}" data-action="pick" data-idx="${i}">${picked ? 'Gewählt' : 'Wählen'}</button></div></li>`;
+      <button class="icon-btn sm ${picked ? 'accent' : ''}" data-action="pick" data-idx="${i}" aria-label="${esc(it.name)} auswählen" aria-pressed="${picked}">${picked ? ICON.checkSm : ICON.plus}</button></div></li>`;
 }
 function renderResults() {
   const m = S.modal; if (!m || m.type !== 'add') return;
@@ -1744,7 +1777,8 @@ function renderResults() {
   if ((m.tab === 'search' || m.tab === 'scan') && (m.results.length || m.loading || m.query)) {
     const off = m.results.filter(x => x.source === 'off'), usda = m.results.filter(x => x.source === 'usda');
     m.shown = [...off, ...usda];
-    html = group('Produkte, Werte pro 100 g', off, 0) + group('Frische Lebensmittel, Werte pro 100 g', usda, off.length) + (m.loading ? '<p class="hint">Sucht …</p>' : '');
+    html = group('Produkte, Werte pro 100 g', off, 0) + group('Frische Lebensmittel, Werte pro 100 g', usda, off.length) + (m.loading ? '<p class="hint">Sucht …</p>' : '')
+      + (off.length ? '<p class="foot">Produktfotos und -daten: Open Food Facts, eine offene Datenbank, in der Nutzer Produkte eintragen.</p>' : '');
   } else if (m.tab === 'search' || m.tab === 'scan') {
     const fav = S.lib.favorites.filter(okKind);
     const rec = S.lib.recent.filter(okKind).filter(r => !fav.some(f => foodKey(f) === foodKey(r))).slice(0, 12);
@@ -1787,7 +1821,7 @@ function renderPending() {
   const supp = it.source === 'supp';
   const def = supp ? 1 : Math.round(it.portion || 100);
   box.hidden = false;
-  box.innerHTML = `<div class="pname">${esc(it.name)}</div><div class="pprev" id="pprev">${pendingPreview(it, def)}</div>
+  box.innerHTML = `${thumbHTML(it, 'lg')}<div class="pname">${esc(it.name)}</div><div class="pprev" id="pprev">${pendingPreview(it, def)}</div>
     <label class="gram"><input id="pqty" type="number" inputmode="decimal" min="${supp ? 0.5 : 1}" max="${supp ? 50 : 5000}" step="${supp ? 0.5 : 1}" value="${def}" aria-label="Menge"> ${supp ? esc(it.unit || 'Stk') : 'g'}</label>
     <button class="btn primary" data-action="add-pending">${m.mode === 'log' ? 'Eintragen' : 'Als Zutat nehmen'}</button>`;
   const g = $('#pqty'); if (g && window.matchMedia && window.matchMedia('(pointer:fine)').matches) { g.focus(); g.select(); }
@@ -1875,8 +1909,9 @@ function openEditItem(date, id) {
   const mini = supp ? '' : `<div class="mini">${[['kcal', 'kcal', 0], ['protein', 'g Eiweiß', 0], ['carbs', 'g KH', 0], ['fat', 'g Fett', 0]].map(([k, l, d]) => `<div><b>${v[k] != null ? fmtNum(v[k] * f, d) : '–'}</b><span>${l}</span></div>`).join('')}</div>`;
   const contrib = MICRO_KEYS.concat(['fiber']).filter(k => tg[k] && num(v[k]) > 0).map(k => ({ k, p: num(v[k]) * f / tg[k].value })).sort((a, b) => b.p - a.p).slice(0, 5);
   const fav = isFavRef(toFoodRef(it));
+  const photo = safeImg(it.img) ? `<div class="photo"><img src="${esc(it.img)}" alt="Foto: ${esc(it.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></div>` : '';
   $('#modal-root').innerHTML = modalShell(esc(it.name), [it.brand, dateLabel(date)].filter(Boolean).join(' · '), `
-    ${mini}${contrib.length ? `<p class="secttl" style="margin-top:4px">Steuert am meisten bei</p><ul class="contrib">${contrib.map(c => `<li><span>${labelOf(c.k)}</span><b>${pctTxt(c.p)} vom Tagesziel</b></li>`).join('')}</ul>` : ''}
+    ${photo}${mini}${contrib.length ? `<p class="secttl" style="margin-top:4px">Steuert am meisten bei</p><ul class="contrib">${contrib.map(c => `<li><span>${labelOf(c.k)}</span><b>${pctTxt(c.p)} vom Tagesziel</b></li>`).join('')}</ul>` : ''}
     <form data-form="edit-item">
       <div class="pgrid"><div class="field"><label for="eq">Menge (${supp ? esc(it.unit) : 'g'})</label><input id="eq" name="qty" inputmode="decimal" value="${esc(fmtNum(supp ? it.qty : it.grams, 1))}" required></div>
       ${supp ? '' : `<div class="field"><label for="em2">Mahlzeit</label><select id="em2" name="meal">${MEALS.filter(x => x.id !== 'erg').map(x => `<option value="${x.id}" ${x.id === it.meal ? 'selected' : ''}>${x.label}</option>`).join('')}</select></div>`}
