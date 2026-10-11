@@ -434,7 +434,7 @@ const FIREBASE_CONFIG = {
   projectId: "health-45f80",
   appId: "1:676711657322:web:181b9006c52566d4ad3f13"
 };
-const USDA_API_KEY = "DEMO_KEY";
+const USDA_API_KEY = "lnoTG9TgOaGEaUcXezbwodpCfUc5OtExYlTLFbTs";
 const FIREBASE_VERSION = "10.14.1";
 const SCAN_LIB = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
 const FIREBASE_MISSING = ['apiKey', 'databaseURL', 'projectId', 'appId'].filter(k => !FIREBASE_CONFIG[k] || String(FIREBASE_CONFIG[k]).startsWith('DEIN'));
@@ -1211,7 +1211,7 @@ const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_gro
    Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
    Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
    und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
-const APP_VERSION = '4.3';
+const APP_VERSION = '4.4';
 const OFF_FIELDS_BASIC = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
 const offCache = new Map();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
