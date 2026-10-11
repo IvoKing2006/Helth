@@ -1207,12 +1207,38 @@ async function fetchJson(url, ms = 15000) {
 }
 const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade,image_front_small_url,image_small_url,image_front_url';
 
-async function searchOFF(q) {
+/* Suche bei Open Food Facts: zuerst der neue Suchdienst (Search-a-licious), sonst die alte Suche.
+   Open Food Facts erlaubt höchstens 10 Suchen pro Minute, deshalb werden Ergebnisse gemerkt. */
+const offCache = new Map();
+async function searchSAL(q) {
+  const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&langs=de,en&page_size=20&fields=${OFF_FIELDS}`;
+  const data = await fetchJson(url, 8000);
+  const hits = Array.isArray(data && data.hits) ? data.hits : [];
+  return hits.map(h => fromOFF({ ...h, brands: Array.isArray(h.brands) ? h.brands.join(', ') : h.brands })).filter(Boolean);
+}
+async function searchPL(q) {
   const base = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&lc=de&sort_by=unique_scans_n&fields=${OFF_FIELDS}`;
-  const de = '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany';
-  let data = await fetchJson(base + de);
-  if (!(data.products || []).length) data = await fetchJson(base);
+  let data = await fetchJson(base + '&tagtype_0=countries&tag_contains_0=contains&tag_0=germany', 20000);
+  if (!(data.products || []).length) data = await fetchJson(base, 20000);
   return (data.products || []).map(fromOFF).filter(Boolean);
+}
+async function searchOFF(q) {
+  const key = q.trim().toLowerCase();
+  if (offCache.has(key)) return offCache.get(key);
+  let res = [], salError = null;
+  try { res = await searchSAL(q); } catch (e) { salError = e; console.warn('Neuer Suchdienst nicht erreichbar, nehme die alte Suche', e); }
+  if (!res.length) {
+    try { res = await searchPL(q); }
+    catch (e) { if (salError && !e.status) e.status = salError.status; throw e; }
+  }
+  offCache.set(key, res);
+  return res;
+}
+function offErrorText(e) {
+  if (e && (e.status === 429 || e.status === 503)) return 'Open Food Facts lässt gerade keine weiteren Suchen zu. Sie erlauben höchstens 10 Suchen pro Minute, und zu Stoßzeiten ist der Server oft überlastet. Warte eine Minute und such dann noch einmal.';
+  if (e && e.name === 'AbortError') return 'Open Food Facts hat zu lange gebraucht. Versuch es gleich noch einmal oder scanne den Barcode, das geht über einen anderen, schnelleren Weg.';
+  if (e && e.status) return `Open Food Facts hat mit einem Fehler geantwortet (Code ${e.status}). Versuch es gleich noch einmal.`;
+  return 'Open Food Facts ist gerade nicht erreichbar. Prüf deine Internetverbindung. Falls ein Werbeblocker läuft, kann auch der die Suche blockieren.';
 }
 async function lookupOFF(code) {
   const data = await fetchJson(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`);
@@ -1836,7 +1862,7 @@ async function doSearch(q) {
   if (S.modal !== m) return;
   m.loading = false;
   if (off.status === 'fulfilled') m.results.push(...off.value);
-  else m.notes.push('Open Food Facts antwortet gerade nicht. Versuch es gleich noch einmal.');
+  else { console.error(off.reason); m.notes.push(offErrorText(off.reason) + (usda.status === 'fulfilled' && usda.value.length ? ' Frische Lebensmittel aus der USDA-Datenbank findest du trotzdem unten.' : '')); }
   if (usda.status === 'fulfilled') m.results.push(...usda.value.map(x => ({ ...x, nameEn: x.name, name: germanName(x.name) })));
   else if (usda.reason && usda.reason.status === 429) m.notes.push('Das Tageslimit der USDA-Datenbank ist erreicht. Mit einem eigenen kostenlosen USDA-Schlüssel in der Datei passiert das nicht.');
   else m.notes.push('Die USDA-Datenbank antwortet gerade nicht.');
@@ -1852,7 +1878,7 @@ async function doLookup(code) {
     if (S.modal !== m) return;
     if (it) { m.results = [it]; m.loading = false; renderResults(); m.picked = 0; renderResults(); renderPending(); return; }
     m.notes.push('Dieses Produkt ist bei Open Food Facts nicht eingetragen oder hat keine Nährwerte. Such es per Name oder leg es unter „Meine“ an.');
-  } catch (e) { m.notes.push('Open Food Facts antwortet gerade nicht. Versuch es gleich noch einmal.'); }
+  } catch (e) { console.error(e); m.notes.push(offErrorText(e)); }
   m.loading = false; renderResults();
 }
 let scanner = null;
