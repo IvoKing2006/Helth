@@ -125,6 +125,9 @@ svg{display:block}
 .nova.n1{background:var(--nova1)} .nova.n2{background:var(--nova2)} .nova.n3{background:var(--nova3);color:#1B1B1B} .nova.n4{background:var(--nova4)}
 .chip{display:inline-block;border-radius:8px;padding:2px 8px;font-size:.78rem;font-weight:650;background:var(--surface2);color:var(--text)}
 .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip.src{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.chip.src.fresh{border-color:color-mix(in srgb,var(--micro) 55%,var(--line));color:var(--text)}
+.chip.src.mine{background:var(--primary);color:var(--on-primary);border-color:transparent}
 .ns{display:inline-block;border-radius:6px;padding:1px 6px;font-size:.72rem;font-weight:700}
 .ns-a{background:#1F8A4C;color:#fff}.ns-b{background:#6AA83A;color:#fff}.ns-c{background:#E8B91C;color:#1b1b1b}.ns-d{background:#E8872C;color:#1b1b1b}.ns-e{background:#D23F31;color:#fff}
 
@@ -756,7 +759,7 @@ function toFoodRef(it) {
   const r = {
     source: it.source, code: it.code || '', id: it.refId || '', name: it.name, brand: it.brand || '',
     per100: it.per100 || {}, nova: it.nova ?? null, nutri: it.nutri ?? null, incomplete: it.incomplete || [],
-    portion: it.portion || null, img: safeImg(it.img)
+    portion: it.portion || null, img: safeImg(it.img), nameEn: it.nameEn || null
   };
   if (it.ingredients) { r.ingredients = it.ingredients; r.recipeTotal = it.recipeTotal; }
   return r;
@@ -771,7 +774,7 @@ function makeItem(food, qty, meal, time) {
   const base = {
     id: uid(), kind: supp ? 'supp' : 'food', name: food.name, brand: food.brand || '',
     source: food.source, code: food.code || '', refId: food.id || '', meal, time: time || '',
-    nova: food.nova ?? null, nutri: food.nutri ?? null, img: safeImg(food.img)
+    nova: food.nova ?? null, nutri: food.nutri ?? null, img: safeImg(food.img), nameEn: food.nameEn || null
   };
   if (supp) return { ...base, qty, unit: food.unit || 'Stk', perUnit: food.perUnit || {} };
   const it = { ...base, grams: qty, per100: food.per100 || {}, incomplete: food.incomplete || [], portion: food.portion || null };
@@ -1065,6 +1068,72 @@ function germanName(desc) {
   const out = tr.filter((x, i) => x && x !== tr[i - 1]).join(', ');
   return out ? out.charAt(0).toUpperCase() + out.slice(1) : String(desc || '');
 }
+
+/* ---- Suche nach Relevanz sortieren ---- */
+const normTxt = s => String(s || '').toLowerCase().replace(/ß/g, 'ss').normalize('NFD').replace(/[̀-ͯ]/g, '');
+const stemW = w => w.length > 3 ? w.replace(/(en|es|e|n|s)$/, '') : w;
+const tokens = s => normTxt(s).split(/[^a-z0-9]+/).filter(Boolean).map(stemW);
+/* Wörter, die auf verarbeitete Varianten hindeuten (auch in zusammengesetzten Wörtern wie "Bananenchips") */
+const PROC_WORDS = ['chips', 'pulver', 'saft', 'getrocknet', 'kuchen', 'smoothie', 'riegel', 'sirup', 'nektar', 'shake', 'fruchtgummi', 'muesli', 'musli',
+  'marmelade', 'konfiture', 'pudding', 'dried', 'dehydrated', 'powder', 'juice', 'canned', 'frozen', 'babyfood', 'baby food', 'candied',
+  'sweetened', 'syrup', 'dessert', 'bread', 'cake', 'muffin', 'flour', 'snack', 'puree', 'jam', 'nectar', 'chocolate', 'schoko'];
+function procPenalty(text, q) {
+  const t = normTxt(text), qn = normTxt(q);
+  return PROC_WORDS.some(w => t.includes(w) && !qn.includes(w)) ? 25 : 0;
+}
+function translateSmart(q) {
+  const keys = Object.keys(DE_EN);
+  return String(q).toLowerCase().split(/\s+/).filter(Boolean).map(w => {
+    if (DE_EN[w]) return DE_EN[w];
+    const k = keys.find(k => stemW(normTxt(k)) === stemW(normTxt(w)));
+    return k ? DE_EN[k] : w;
+  }).join(' ');
+}
+function searchScore(item, q, en) {
+  const qs = tokens(q), es = tokens(en);
+  if (!qs.length) return 0;
+  if (item.source === 'usda') {
+    const desc = item.nameEn || item.name;
+    const parts = normTxt(desc).split(/,\s*/);
+    const all = tokens(desc), first = tokens(parts[0]);
+    let s = 0;
+    const full = es.length && es.every(t => all.includes(t));
+    if (full) s += 35;
+    else if (es.some(t => all.includes(t))) s += 5;
+    if (es.length && first.includes(es[0])) s += 15;
+    if (full && /\braw\b/.test(normTxt(desc))) s += 12;
+    s -= 3 * Math.max(0, parts.length - 2);
+    return s - procPenalty(desc, en + ' ' + q);
+  }
+  const words = tokens(item.name);
+  let s = 0;
+  if (qs.every(t => words.includes(t))) {
+    s += 30;
+    if (words.length <= qs.length + 1) s += 25;
+    if (words[0] === qs[0]) s += 5;
+  } else if (qs.every(t => words.some(w => w.startsWith(t)))) {
+    s += 28;                                   /* zusammengesetztes Wort, z. B. "Hähnchenbrustfilet" bei "Hähnchenbrust" */
+    if (words.length <= qs.length + 1) s += 15;
+  } else if (qs.every(t => normTxt(item.name).includes(t))) s += 8;
+  s -= 3 * Math.max(0, words.length - qs.length - 1);
+  if (item.nova === 1) s += 6;
+  return s - procPenalty(item.name, q);
+}
+/* Eigene Treffer (schon gegessen, Favoriten, eigene Lebensmittel) zuerst, dann nach Punktzahl; bei Gleichstand bleibt die Reihenfolge der Quelle */
+function rankSearch(apiItems, ownItems, q, en) {
+  const qs = tokens(q), es = tokens(en);
+  const own = ownItems.filter(f => f.source !== 'supp' && qs.length && (qs.every(t => normTxt(f.name + ' ' + (f.nameEn || '')).includes(t))
+      || (f.nameEn && es.length && es.every(t => tokens(f.nameEn).includes(t)))))
+    .map(f => ({ ...f, mine: true }));
+  const ownKeys = new Set(own.map(foodKey));
+  const seen = new Set();
+  const scored = apiItems.filter(it => !ownKeys.has(foodKey(it)))
+    .filter(it => { const k = foodKey(it); if (seen.has(k)) return false; seen.add(k); return true; })
+    .map((it, i) => ({ it, s: searchScore(it, q, en) - i * 0.01 }))
+    .sort((a, b) => b.s - a.s).map(x => x.it);
+  const ownSorted = own.map((it, i) => ({ it, s: searchScore(it, q, en) - i * 0.01 })).sort((a, b) => b.s - a.s).map(x => x.it);
+  return [...ownSorted, ...scored];
+}
 /* PURE:END */
 
 /* ---------------------------------------------------------------------
@@ -1211,7 +1280,7 @@ const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,nova_gro
    Der neue Suchdienst search.openfoodfacts.org sendet keine CORS-Freigabe und funktioniert deshalb im Browser nicht.
    Open Food Facts erlaubt höchstens 10 Suchen pro Minute; Ergebnisse werden deshalb gemerkt,
    und bei einem Aussetzer wird einmal nach kurzer Pause wiederholt. */
-const APP_VERSION = '4.4';
+const APP_VERSION = '4.5';
 const OFF_FIELDS_BASIC = 'code,product_name,product_name_de,brands,nutriments,nova_group,nutriscore_grade';
 const offCache = new Map();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1793,7 +1862,8 @@ function resRowHTML(it, i) {
     chips = `<span class="chip">pro ${esc(it.unit || 'Stk')}</span>` + ks.map(k => `<span class="chip">${labelOf(k)} ${fmtNum(it.perUnit[k], decOf(k))} ${unitOf(k)}</span>`).join('');
   } else {
     const p = it.per100 || {}, micro = MICRO_KEYS.filter(k => p[k] != null).length;
-    chips = `<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span>${it.source === 'recipe' ? '<span class="chip">Rezept</span>' : ''}${it.source === 'custom' ? '<span class="chip">Eigenes</span>' : ''}${novaPill(it.nova)}${nutriPill(it.nutri)}<span class="chip" title="So viele der ${MICRO_KEYS.length} Vitamine und Mineralstoffe stehen in den Daten">${micro}/${MICRO_KEYS.length} Mikros</span>`;
+    const src = it.mine ? '<span class="chip src mine">Schon gegessen</span>' : it.source === 'usda' ? '<span class="chip src fresh">Frisch</span>' : it.source === 'off' ? '<span class="chip src">Produkt</span>' : '';
+    chips = `${src}<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span>${it.source === 'recipe' ? '<span class="chip">Rezept</span>' : ''}${it.source === 'custom' ? '<span class="chip">Eigenes</span>' : ''}${novaPill(it.nova)}${nutriPill(it.nutri)}<span class="chip" title="So viele der ${MICRO_KEYS.length} Vitamine und Mineralstoffe stehen in den Daten">${micro}/${MICRO_KEYS.length} Mikros</span>`;
   }
   const fav = isFavRef(it);
   const sub = it.nameEn ? `<span class="ibrand">${esc(it.nameEn)}</span>` : (it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : '');
@@ -1809,10 +1879,13 @@ function renderResults() {
   const group = (title, list, offset) => list.length ? `<h3>${title}</h3><ul class="results">${list.map((it, j) => resRowHTML(it, offset + j)).join('')}</ul>` : '';
   let html = '';
   if ((m.tab === 'search' || m.tab === 'scan') && (m.results.length || m.loading || m.query)) {
-    const off = m.results.filter(x => x.source === 'off'), usda = m.results.filter(x => x.source === 'usda');
-    m.shown = [...off, ...usda];
-    html = group('Produkte, Werte pro 100 g', off, 0) + group('Frische Lebensmittel, Werte pro 100 g', usda, off.length) + (m.loading ? '<p class="hint">Sucht …</p>' : '')
-      + (off.length ? '<p class="foot">Produktfotos und -daten: Open Food Facts, eine offene Datenbank, in der Nutzer Produkte eintragen.</p>' : '');
+    const TOP = 8;
+    m.shown = m.showAll ? m.results : m.results.slice(0, TOP);
+    const rest = m.results.length - m.shown.length;
+    html = group(m.results.length ? 'Beste Treffer, Werte pro 100 g' : '', m.shown, 0)
+      + (rest > 0 ? `<button class="btn" style="width:100%;justify-content:center;margin-top:10px" data-action="show-all">Weitere Treffer anzeigen (${rest})</button>` : '')
+      + (m.loading ? '<p class="hint">Sucht …</p>' : '')
+      + (m.results.some(x => x.source === 'off') ? '<p class="foot">Produktfotos und -daten: Open Food Facts, eine offene Datenbank, in der Nutzer Produkte eintragen.</p>' : '');
   } else if (m.tab === 'search' || m.tab === 'scan') {
     const fav = S.lib.favorites.filter(okKind);
     const rec = S.lib.recent.filter(okKind).filter(r => !fav.some(f => foodKey(f) === foodKey(r))).slice(0, 12);
@@ -1863,9 +1936,9 @@ function renderPending() {
 async function doSearch(q) {
   const m = S.modal; if (!m || m.type !== 'add') return;
   q = q.trim(); if (q.length < 2) return;
-  m.query = q; m.results = []; m.picked = null; m.loading = true; m.notes = [];
+  m.query = q; m.results = []; m.picked = null; m.loading = true; m.notes = []; m.showAll = false;
   renderPending(); renderResults();
-  const en = translateQuery(q);
+  const en = translateSmart(q);
   const [off, usda] = await Promise.allSettled([searchOFF(q), searchUSDA(en)]);
   if (S.modal !== m) return;
   m.loading = false;
@@ -1874,6 +1947,7 @@ async function doSearch(q) {
   if (usda.status === 'fulfilled') m.results.push(...usda.value.map(x => ({ ...x, nameEn: x.name, name: germanName(x.name) })));
   else if (usda.reason && usda.reason.status === 429) m.notes.push('Das Tageslimit der USDA-Datenbank ist erreicht. Mit einem eigenen kostenlosen USDA-Schlüssel in der Datei passiert das nicht.');
   else m.notes.push('Die USDA-Datenbank antwortet gerade nicht.');
+  m.results = rankSearch(m.results, [...S.lib.recent, ...S.lib.favorites, ...S.lib.custom], q, en);
   if (!m.results.length && !m.notes.length) m.notes.push('Nichts gefunden. Probier einen anderen Begriff oder leg das Essen unter „Meine“ selbst an.');
   renderResults();
 }
@@ -2140,6 +2214,7 @@ document.addEventListener('click', async e => {
       break;
     }
     case 'start-scan': startScan(); break;
+    case 'show-all': { const m = S.modal; if (m && m.type === 'add') { m.showAll = true; renderResults(); } break; }
     case 'pick': { const m = S.modal; if (m && m.type === 'add') { m.picked = Number(el.dataset.idx); renderResults(); renderPending(); } break; }
     case 'fav-toggle': { const m = S.modal; const f = m && m.shown[Number(el.dataset.idx)]; if (f) await toggleFav(f); break; }
     case 'fav-item': {
