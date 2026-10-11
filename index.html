@@ -500,6 +500,7 @@ const mealForTime = t => {
 };
 
 const WATER_TARGET = 1500;
+const SATFAT_SHARE = 0.05;   // Obergrenze für gesättigte Fette: Anteil an der Tagesenergie (eigene Vorgabe, strenger als die übliche 10 %)
 const NUTRIENTS = [
   { key: 'protein', label: 'Eiweiß', unit: 'g', group: 'Makronährstoffe', dec: 0 },
   { key: 'fat', label: 'Fett', unit: 'g', group: 'Makronährstoffe', dec: 0 },
@@ -550,7 +551,7 @@ function computeTargets(p) {
     if (n.key === 'protein') out.protein = { value: Math.round((Number(p && p.proteinPerKg) > 0 ? Number(p.proteinPerKg) : 0.8) * w), type: 'min' };
     else if (n.ref) out[n.key] = { value: n.ref[sex], type: n.type || 'min' };
   }
-  return addOmegaTarget(out, p);
+  return addSatfatTarget(addOmegaTarget(out, p), p);
 }
 
 /* Open Food Facts liefert Vitamine/Mineralstoffe in Gramm pro 100 g -> in mg bzw. µg umrechnen */
@@ -927,6 +928,15 @@ function addOmegaTarget(out, p) {
   return out;
 }
 
+/* Obergrenze gesättigte Fette: 5 % der Tagesenergie (1 g Fett = 9 kcal). Ohne Kalorienziel: 2.500 kcal (Mann) bzw. 2.000 kcal (Frau) */
+function addSatfatTarget(out, p) {
+  const kcal = kcalTarget(p) || (p && p.sex === 'w' ? 2000 : 2500);
+  out.satfat = { value: Math.round(kcal * SATFAT_SHARE / 9 * 10) / 10, type: 'max' };
+  return out;
+}
+/* Ungesättigtes Fett = Gesamtfett minus gesättigtes Fett (Transfette stecken darin, meist sehr wenig) */
+function unsatFat(tot) { return Math.max(0, tot.fat.sum - tot.satfat.sum); }
+
 /* Nährstoff-Score 0 bis 100: Durchschnitt der Abdeckung aller Vitamine und Mineralstoffe, jede höchstens 100 % */
 function nutrientScore(tot, targets) {
   const keys = MICRO_KEYS.filter(k => targets[k] && targets[k].type !== 'max');
@@ -1215,7 +1225,8 @@ const NUTRIENT_INFO = {
   fat: { what: 'Liefert Energie und hilft, die Vitamine A, D, E und K aufzunehmen.', store: 'none' },
   carbs: { what: 'Die wichtigste schnelle Energiequelle für Gehirn und Muskeln.', store: 'none' },
   sugar: { what: 'Teil der Kohlenhydrate. Weniger ist besser, vor allem bei zugesetztem Zucker.', store: 'none' },
-  satfat: { what: 'Steckt vor allem in Butter, Käse, Wurst und Fertigprodukten. Besser in Maßen.', store: 'none' },
+  satfat: { what: 'Das „harte“ Fett aus Butter, Käse, Wurst, Fleisch und Fertigprodukten. Es steckt schon im Gesamtfett drin. Zu viel davon ist auf Dauer schlecht für Herz und Cholesterin.', store: 'max',
+    more: `Deine Obergrenze liegt bei ${Math.round(SATFAT_SHARE * 100)} % deiner Tageskalorien. Pro 100 g Lebensmittel gilt: wenig bis 1,5 g, mittel 1,5 bis 5 g, viel über 5 g. Ungesättigte Fette (Olivenöl, Rapsöl, Nüsse, Fisch) sind günstiger. Ihre Menge ist Gesamtfett minus gesättigt.` },
   chol: { what: 'Steckt in tierischen Lebensmitteln. Der Körper bildet es auch selbst.', store: 'none' },
   omega3: { what: 'Summe aller Omega-3-Fettsäuren. Aufgeteilt siehst du ALA (pflanzlich) und EPA + DHA (Fisch).', store: 'none' }
 };
@@ -1623,6 +1634,10 @@ function nutrientsHTML(tot, targets, items) {
     if (!hasData(items, key)) return `<div class="nrow tap" data-action="nut-info" data-key="${key}" role="button" tabindex="0"><span class="nn">${n.label}</span><span class="nv">keine Daten</span></div>`;
     return `<div class="nrow tap" data-action="nut-info" data-key="${key}" role="button" tabindex="0"><span class="nn">${n.label}</span><span class="nv">${approxMark(e.missing > 0)}<b>${fmtNum(e.sum, n.dec)}</b>${t ? ` / ${t.type === 'max' ? 'max. ' : ''}${fmtNum(t.value, n.dec)}` : ''} ${n.unit}</span>${t ? barHTML(p, { over: t.type === 'max' && p > 1, max: t.type === 'max' }) : ''}</div>`;
   };
+  const unsatRow = () => {
+    if (!hasData(items, 'fat') || !hasData(items, 'satfat')) return '';
+    return `<div class="nrow"><span class="nn">davon ungesättigt</span><span class="nv">${approxMark(tot.fat.missing > 0 || tot.satfat.missing > 0)}<b>${fmtNum(unsatFat(tot), 1)}</b> g</span></div>`;
+  };
   let body;
   if (S.nutView === 'gaps') {
     const keys = NUTRIENTS.map(x => x.key).filter(k => targets[k] && hasData(items, k)).filter(k => {
@@ -1633,11 +1648,11 @@ function nutrientsHTML(tot, targets, items) {
     const nd = NUTRIENTS.filter(x => targets[x.key] && !hasData(items, x.key)).map(x => x.label);
     if (nd.length) body += `<p class="hint" style="margin-top:10px">Ohne Daten: ${nd.join(', ')}.</p>`;
   } else {
-    body = GROUPS.map(g => `<h3 class="ng">${g}</h3>${NUTRIENTS.filter(x => x.group === g).map(x => row(x.key)).join('')}`).join('') + novaHTML(items);
+    body = GROUPS.map(g => `<h3 class="ng">${g}</h3>${NUTRIENTS.filter(x => x.group === g).map(x => row(x.key) + (x.key === 'satfat' ? unsatRow() : '')).join('')}`).join('') + novaHTML(items);
   }
   return `<section class="card nutrients"><div class="chead"><h2>Nährstoffe</h2><div class="seg" role="group" aria-label="Ansicht">
       <button data-action="nut-view" data-v="gaps" aria-pressed="${S.nutView === 'gaps'}">Lücken</button><button data-action="nut-view" data-v="all" aria-pressed="${S.nutView === 'all'}">Alle</button></div></div>
-    ${body}<p class="foot">Der Strich markiert 100 % des Richtwerts (vereinfacht nach D-A-CH, Wasser nach DGE, Koffein nach EFSA, kein medizinischer Rat). ≈ heißt: Bei manchen Einträgen fehlen Angaben, der echte Wert ist vermutlich höher. Bei Nahrungsergänzung wird nicht auf Obergrenzen geprüft.</p></section>`;
+    ${body}<p class="foot">Der Strich markiert 100 % des Richtwerts (vereinfacht nach D-A-CH, Wasser nach DGE, Koffein nach EFSA, kein medizinischer Rat). Gesättigte Fette: dein eigenes Limit von ${Math.round(SATFAT_SHARE * 100)} % der Kalorien. ≈ heißt: Bei manchen Einträgen fehlen Angaben, der echte Wert ist vermutlich höher. Bei Nahrungsergänzung wird nicht auf Obergrenzen geprüft.</p></section>`;
 }
 function bodyHTML(date, day) {
   const sport = day.sport.map(s => `<li><span>${esc(s.name)}<small>${[s.minutes ? fmtNum(s.minutes) + ' Min.' : '', s.kcal ? fmtNum(s.kcal) + ' kcal' : ''].filter(Boolean).join(' · ')}</small></span>
