@@ -1,6 +1,6 @@
 /* Service Worker für den Nährstoff-Planer: Die App startet damit auch ohne Internet.
    Bei jeder neuen Version der App VERSION erhöhen, dann holt sich jedes Gerät die neuen Dateien. */
-const VERSION = 'np-5.1';
+const VERSION = 'np-6.0';
 const FIREBASE_VERSION = '10.14.1';   // muss zu FIREBASE_VERSION in index.html passen
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon.png'];
 const FIREBASE = ['firebase-app.js', 'firebase-auth.js', 'firebase-database.js']
