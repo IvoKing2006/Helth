@@ -14,6 +14,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<script>try{var t=localStorage.getItem('np:theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
@@ -44,6 +45,7 @@
   --primary:#A6E33D; --on-primary:#0C131B; --danger:#FF6B61; --warnbg:#3A1F22; --okbg:#1F2E17;
   --heat0:#1D2936; --heat1:#2D4220; --heat2:#4A6E24; --heat3:#77A82E; --heat4:#A6E33D;
   --nova1:#4CC27A; --nova2:#9BCB57; --nova3:#F0B53A; --nova4:#FF6B61;
+  --sheet-shadow:0 -8px 40px rgba(0,0,0,.55);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -127,16 +129,9 @@ svg{display:block}
 .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .badge{display:inline-flex;align-items:center;gap:5px;border-radius:7px;padding:2px 8px 2px 6px;font-size:.74rem;font-weight:700;margin-bottom:4px;line-height:1.35}
 .badge svg{width:14px;height:14px;flex:none}
-.badge.lab{background:color-mix(in srgb,var(--micro) 26%,transparent);color:var(--text)}
-.badge.lab svg{color:var(--micro)}
-.badge.user{background:color-mix(in srgb,var(--nova3) 24%,transparent);color:var(--text)}
-.badge.user svg{color:var(--nova3)}
 .badge.own{background:color-mix(in srgb,var(--protein) 22%,transparent);color:var(--text)}
 .badge.own svg{color:var(--protein)}
 .res .iname .badge,.pending .pname .badge{display:flex;width:fit-content}
-.chip.src{background:transparent;border:1px solid var(--line);color:var(--muted)}
-.chip.src.fresh{border-color:color-mix(in srgb,var(--micro) 55%,var(--line));color:var(--text)}
-.chip.src.mine{background:var(--primary);color:var(--on-primary);border-color:transparent}
 .ns{display:inline-block;border-radius:6px;padding:1px 6px;font-size:.72rem;font-weight:700}
 .ns-a{background:#1F8A4C;color:#fff}.ns-b{background:#6AA83A;color:#fff}.ns-c{background:#E8B91C;color:#1b1b1b}.ns-d{background:#E8872C;color:#1b1b1b}.ns-e{background:#D23F31;color:#fff}
 
@@ -205,8 +200,6 @@ svg{display:block}
 .row:hover{background:var(--surface2)}
 .thumb{position:relative;flex:none;width:40px;height:40px;border-radius:11px;background:var(--surface2);overflow:hidden;display:grid;place-items:center}
 .thumb::before{content:attr(data-l);font-weight:800;font-stretch:115%;color:var(--muted);font-size:1rem}
-.thumb.fresh{background:color-mix(in srgb,var(--micro) 22%,var(--surface2))}
-.thumb.fresh::before{color:var(--text)}
 .thumb.supp{background:color-mix(in srgb,var(--protein) 22%,var(--surface2))}
 .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
 .thumb.lg{width:56px;height:56px;border-radius:14px}
@@ -464,6 +457,17 @@ details.fd summary{cursor:pointer;font-weight:700}
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:40;max-width:90vw;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 
+.toast{display:flex;align-items:center;gap:14px;width:max-content}
+.toast-btn{flex:none;background:none;border:0;padding:4px 2px;color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.sync{position:fixed;z-index:6;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 14px;font-size:.84rem;font-weight:650;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync.off{color:var(--text);border-color:var(--nova3)}
+@media(min-width:900px){.sync{bottom:18px;left:calc(50% + 118px)}}
+.auth.setup{max-width:520px;padding-top:calc(env(safe-area-inset-top) + 6vh)}
+.authlinks{display:grid;justify-items:start;gap:14px;margin-top:18px}
+.auth .done{margin:0 0 16px;color:var(--text)}
+
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -472,6 +476,7 @@ details.fd summary{cursor:pointer;font-weight:700}
 <div id="modal-root"></div>
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
+<div id="sync" class="sync" role="status" hidden></div>
 <script type="module">
 /* =====================================================================
    KONFIGURATION
@@ -560,7 +565,7 @@ const NUTRIENTS = [
   { key: 'ala', label: 'Omega-3 ALA (pflanzlich)', unit: 'g', group: 'Fette und mehr', dec: 1, ref: { m: 1.4, w: 1.1 } },
   { key: 'epadha', label: 'Omega-3 EPA + DHA (Fisch)', unit: 'mg', group: 'Fette und mehr', dec: 0, ref: { m: 250, w: 250 } },
   { key: 'caffeine', label: 'Koffein', unit: 'mg', group: 'Fette und mehr', dec: 0, ref: { m: 400, w: 400 }, type: 'max' },
-  { key: 'vitA', label: 'Vitamin A', unit: 'µg RAE', group: 'Vitamine', dec: 0, ref: { m: 900, w: 700 } },
+  { key: 'vitA', label: 'Vitamin A', unit: 'µg RAE', group: 'Vitamine', dec: 0, ref: { m: 850, w: 700 } },
   { key: 'vitC', label: 'Vitamin C', unit: 'mg', group: 'Vitamine', dec: 0, ref: { m: 110, w: 95 } },
   { key: 'vitD', label: 'Vitamin D', unit: 'µg', group: 'Vitamine', dec: 1, ref: { m: 20, w: 20 } },
   { key: 'vitE', label: 'Vitamin E', unit: 'mg α-Toc', group: 'Vitamine', dec: 1, ref: { m: 15, w: 12 } },
@@ -721,7 +726,7 @@ function toFoodRef(it) {
   const r = {
     source: it.source, code: it.code || '', id: it.refId || '', name: it.name, brand: it.brand || '',
     per100: it.per100 || {}, nova: it.nova ?? null, nutri: it.nutri ?? null, incomplete: it.incomplete || [],
-    portion: it.portion || null, img: safeImg(it.img), nameEn: it.nameEn || null
+    portion: it.portion || null, img: safeImg(it.img)
   };
   if (it.ingredients) { r.ingredients = it.ingredients; r.recipeTotal = it.recipeTotal; }
   return r;
@@ -736,7 +741,7 @@ function makeItem(food, qty, meal, time) {
   const base = {
     id: uid(), kind: supp ? 'supp' : 'food', name: food.name, brand: food.brand || '',
     source: food.source, code: food.code || '', refId: food.id || '', meal, time: time || '',
-    nova: food.nova ?? null, nutri: food.nutri ?? null, img: safeImg(food.img), nameEn: food.nameEn || null
+    nova: food.nova ?? null, nutri: food.nutri ?? null, img: safeImg(food.img)
   };
   if (supp) return { ...base, qty, unit: food.unit || 'Stk', perUnit: food.perUnit || {} };
   const it = { ...base, grams: qty, per100: food.per100 || {}, incomplete: food.incomplete || [], portion: food.portion || null };
@@ -825,7 +830,7 @@ function niceMax(v) {
   const n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
   return n * p;
 }
-/* Nur Bilder von Open Food Facts über https zulassen; alles andere wird verworfen */
+/* Fotos haben nur alte Einträge aus der früheren Suche (Open Food Facts). Nur diese Adressen über https zulassen. */
 function safeImg(u) {
   const s = String(u || '').trim();
   return /^https:\/\/([a-z0-9-]+\.)*openfoodfacts\.(org|net)\/[^\s"'<>]+$/i.test(s) ? s : null;
@@ -1077,11 +1082,18 @@ const unitOf = k => k === 'kcal' ? 'kcal' : ((NUTRIENTS.find(n => n.key === k) |
 const decOf = k => k === 'kcal' ? 0 : ((NUTRIENTS.find(n => n.key === k) || {}).dec ?? 0);
 const pctTxt = p => `${Math.round((p || 0) * 100)} %`;
 
-let toastTimer;
-function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+let toastTimer, toastFn = null;
+/* Kurze Meldung oben. Mit action erscheint daneben ein Knopf, z. B. „Rückgängig“ */
+function toast(msg, action) {
+  const t = $('#toast');
+  t.innerHTML = `<span>${esc(msg)}</span>${action ? `<button class="toast-btn" data-action="toast-act">${esc(action.label)}</button>` : ''}`;
+  toastFn = action ? action.fn : null;
+  t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, action ? 6500 : 3200);
 }
+function hideToast() { clearTimeout(toastTimer); $('#toast').hidden = true; toastFn = null; }
+/* Zahl für ein Eingabefeld: ohne Tausenderpunkt, sonst liest die App „1.500“ später als 1,5 */
+const inputNum = (v, dec = 1) => v == null || !Number.isFinite(Number(v)) ? '' : String(Math.round(Number(v) * 10 ** dec) / 10 ** dec).replace('.', ',');
 
 /* ---------------------------------------------------------------------
    Zustand
@@ -1090,10 +1102,13 @@ const S = {
   booting: true, mode: 'local', user: null, uid: null, initError: '',
   page: 'today', more: 'lib', nutView: 'gaps', animate: true,
   monday: mondayOf(new Date()), days: {}, selected: todayStr(),
-  profile: { sex: 'm', weight: 75, proteinPerKg: 0.8, activity: 1.3, goal: 'keep' }, lib: emptyLib(),
+  profile: defaultProfile(), lib: emptyLib(),
   hist: { metric: 'protein', range: 30, loading: false }, shopFromToday: true,
-  authMode: 'login', authError: '', modal: null, draft: null
+  authMode: 'login', authError: '', authInfo: '', authEmail: '', modal: null, draft: null,
+  needsSetup: false, fatal: '', unknown: new Set(), libUnknown: false, staleLoad: false,
+  theme: (() => { try { return localStorage.getItem('np:theme') || 'auto'; } catch { return 'auto'; } })()
 };
+function defaultProfile() { return { sex: 'm', weight: 75, proteinPerKg: 0.8, activity: 1.3, goal: 'keep' }; }
 const getDay = date => S.days[date] || emptyDay();
 const clean = x => JSON.parse(JSON.stringify(x));   // entfernt undefined, damit die Datenbank nichts ablehnt
 
@@ -1123,27 +1138,86 @@ async function initFirebase() {
   ]);
   const app = appM.initializeApp(FIREBASE_CONFIG);
   fb = { auth: authM.getAuth(app), db: dbM.getDatabase(app), authM, dbM };
+  fb.auth.languageCode = 'de';   // E-Mails von Firebase (z. B. Passwort zurücksetzen) auf Deutsch
 }
 const dbRef = path => fb.dbM.ref(fb.db, `users/${S.uid}/${path}`);
+
+/* ---- Offline: Kopie der Firebase-Daten auf diesem Gerät ----
+   Jede Änderung landet zuerst hier (localStorage) und gilt als „wartend“, bis Firebase sie bestätigt.
+   So geht offline nichts verloren, auch nicht, wenn die App zwischendurch neu geladen wird. */
+const REMOTE_TIMEOUT = 6000;
+const CACHE_DAYS = 60;   // so viele Tage zurück bleiben auf dem Gerät
+const withTimeout = (p, ms = REMOTE_TIMEOUT) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+const cache = {
+  key: p => `np:c:${S.uid}:${p}`,
+  get(p) { try { const v = localStorage.getItem(this.key(p)); return v === null ? undefined : JSON.parse(v); } catch { return undefined; } },
+  set(p, v) {
+    const txt = JSON.stringify(v ?? null);
+    try { localStorage.setItem(this.key(p), txt); return true; }
+    catch (e) { console.error(e); pruneCache(14); try { localStorage.setItem(this.key(p), txt); return true; } catch { return false; } }
+  },
+  pending() { return (S.uid && this.get('pending')) || {}; },
+  mark(p) { const m = this.pending(); m[p] = (m[p] || 0) + 1; this.set('pending', m); updateSync(); return m[p]; },
+  unmark(p, seq) { const m = this.pending(); if (m[p] === seq) { delete m[p]; this.set('pending', m); } updateSync(); }
+};
+function pruneCache(days = CACHE_DAYS) {
+  if (!S.uid) return;
+  const pre = `np:c:${S.uid}:day:`, limit = shiftDate(todayStr(), -days), pend = cache.pending(), del = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(pre) && k.slice(pre.length) < limit && !pend['day:' + k.slice(pre.length)]) del.push(k);
+  }
+  del.forEach(k => localStorage.removeItem(k));
+}
+/* Profil oder Bibliothek: vom Server, sonst die Kopie auf dem Gerät. Gibt es beides nicht, ist der Stand unbekannt. */
+async function loadDoc(path) {
+  if (!cache.pending()[path] && navigator.onLine !== false) {
+    try {
+      const s = await withTimeout(fb.dbM.get(dbRef(path)));
+      const v = s.exists() ? s.val() : null;
+      cache.set(path, v); return v;
+    } catch (e) { console.warn('Server nicht erreichbar, nutze die Kopie auf dem Gerät', e); }
+  }
+  S.staleLoad = true;
+  const c = cache.get(path);
+  if (c === undefined) throw new Error('unknown');
+  return c;
+}
 const fbStore = {
-  /* Ein einziger Abruf für den ganzen Zeitraum, nach Datum (Schlüssel) sortiert */
+  /* Ein einziger Abruf für den ganzen Zeitraum. Was hier noch wartet, kommt aus der Kopie. null heißt: unbekannt. */
   async loadDays(dates) {
     if (!dates.length) return [];
-    const sorted = [...dates].sort();
-    const q = fb.dbM.query(dbRef('days'), fb.dbM.orderByKey(), fb.dbM.startAt(sorted[0]), fb.dbM.endAt(sorted[sorted.length - 1]));
-    const val = (await fb.dbM.get(q)).val() || {};
-    return dates.map(d => normalizeDay(val[d]));
+    const pend = cache.pending();
+    const need = dates.filter(d => !pend['day:' + d]).sort();
+    let val = null;
+    if (need.length && navigator.onLine !== false) {
+      try {
+        const q = fb.dbM.query(dbRef('days'), fb.dbM.orderByKey(), fb.dbM.startAt(need[0]), fb.dbM.endAt(need[need.length - 1]));
+        val = (await withTimeout(fb.dbM.get(q))).val() || {};
+      } catch (e) { console.warn('Server nicht erreichbar, nutze die Kopie auf dem Gerät', e); }
+    }
+    if (need.length && !val) S.staleLoad = true;
+    const now = cache.pending();
+    return dates.map(d => {
+      if (val && !now['day:' + d]) { cache.set('day:' + d, val[d] ?? null); return normalizeDay(val[d]); }
+      const c = cache.get('day:' + d);
+      return c === undefined ? null : normalizeDay(c);
+    });
   },
   async saveDay(date, day) { await fb.dbM.set(dbRef('days/' + date), clean(day)); },
   async loadAllDays() {
-    const val = (await fb.dbM.get(dbRef('days'))).val() || {};
+    const val = (await withTimeout(fb.dbM.get(dbRef('days')), 15000)).val() || {};
     const out = {};
     for (const d of Object.keys(val)) out[d] = normalizeDay(val[d]);
+    for (const p of Object.keys(cache.pending())) {
+      if (!p.startsWith('day:')) continue;
+      const c = cache.get(p); if (c !== undefined) out[p.slice(4)] = normalizeDay(c);
+    }
     return out;
   },
-  async loadProfile() { const s = await fb.dbM.get(dbRef('profile')); return s.exists() ? s.val() : null; },
+  async loadProfile() { return loadDoc('profile'); },
   async saveProfile(p) { await fb.dbM.set(dbRef('profile'), clean(p)); },
-  async loadLibrary() { const s = await fb.dbM.get(dbRef('library')); return s.exists() ? normLib(s.val()) : emptyLib(); },
+  async loadLibrary() { const v = await loadDoc('library'); return v ? normLib(v) : emptyLib(); },
   async saveLibrary(l) { await fb.dbM.set(dbRef('library'), clean(l)); }
 };
 let store = localStore;
@@ -1154,29 +1228,127 @@ function queueSave(id, fn) {
   saveChains[id] = (saveChains[id] || Promise.resolve()).catch(() => { }).then(fn);
   return saveChains[id];
 }
-async function persistDay(date) {
-  try { await queueSave('day:' + date, () => store.saveDay(date, getDay(date))); }
-  catch (e) { console.error(e); toast('Speichern fehlgeschlagen. Die Änderung ist nur hier sichtbar.'); }
+/* Erst sofort auf dem Gerät sichern, dann an Firebase schicken. Es wird nicht auf den Server gewartet,
+   damit die App auch offline flüssig bleibt. Offline schickt Firebase die Änderung, sobald wieder Netz da ist. */
+function persistDoc(path, data, remote, errMsg) {
+  let seq = null;
+  if (S.mode === 'firebase') { cache.set(path, data); seq = cache.mark(path); }
+  queueSave(path, remote)
+    .then(() => { if (seq !== null) cache.unmark(path, seq); })
+    .catch(e => { console.error(e); toast(errMsg); });
+  return Promise.resolve();
 }
-async function persistLib() {
-  try { await queueSave('lib', () => store.saveLibrary(S.lib)); }
-  catch (e) { console.error(e); toast('Die Bibliothek konnte nicht gespeichert werden.'); }
+function persistDay(date) {
+  const day = clean(getDay(date));
+  return persistDoc('day:' + date, day, () => store.saveDay(date, day), 'Speichern auf dem Server fehlgeschlagen. Die Änderung ist auf diesem Gerät gesichert.');
 }
+function persistLib() {
+  const lib = clean(S.lib);
+  return persistDoc('library', lib, () => store.saveLibrary(lib), 'Die Bibliothek konnte nicht auf dem Server gespeichert werden.');
+}
+function persistProfile() {
+  const p = clean(S.profile);
+  return persistDoc('profile', p, () => store.saveProfile(p), 'Das Profil konnte nicht auf dem Server gespeichert werden.');
+}
+/* Nach dem Start und wenn die Verbindung zurück ist: alles, was noch wartet, an Firebase schicken */
+function flushPending() {
+  if (S.mode !== 'firebase' || !S.uid) return;
+  for (const [path, seq] of Object.entries(cache.pending())) {
+    const data = cache.get(path);
+    const remote = data === undefined ? null
+      : path === 'library' ? () => store.saveLibrary(data)
+      : path === 'profile' ? () => store.saveProfile(data)
+      : path.startsWith('day:') ? () => store.saveDay(path.slice(4), data) : null;
+    if (!remote) { cache.unmark(path, seq); continue; }
+    queueSave(path, remote).then(() => cache.unmark(path, seq)).catch(e => console.error(e));
+  }
+}
+/* Nach einer Offline-Phase den Stand vom Server holen (z. B. Änderungen vom PC), außer was hier noch wartet */
+async function refreshFromServer() {
+  if (S.mode !== 'firebase' || !S.uid) return;
+  S.staleLoad = false;
+  const dates = Object.keys(S.days).filter(d => !cache.pending()['day:' + d]);
+  try {
+    const arr = await store.loadDays(dates), pend = cache.pending();
+    dates.forEach((d, i) => { if (arr[i] && !pend['day:' + d]) { S.days[d] = arr[i]; S.unknown.delete(d); } });
+    if (!pend.library) { S.lib = await store.loadLibrary(); S.libUnknown = false; }
+  } catch (e) { console.warn(e); }
+  renderAll(); refreshAddModal();
+}
+
+/* Verbindungsanzeige unten: offline oder noch nicht synchronisiert */
+const SYNC = { connected: true, seen: false, timer: null };
+function watchConnection() {
+  SYNC.connected = navigator.onLine !== false;
+  fb.dbM.onValue(fb.dbM.ref(fb.db, '.info/connected'), snap => {
+    if (snap.val() === true) {
+      const back = SYNC.seen;
+      SYNC.connected = true; SYNC.seen = true;
+      if (S.uid) { flushPending(); if (back || S.staleLoad) refreshFromServer(); }
+    } else if (SYNC.seen || navigator.onLine === false) SYNC.connected = false;
+    updateSync();
+  });
+  setTimeout(() => { if (!SYNC.seen) { SYNC.connected = false; updateSync(); } }, 5000);
+  window.addEventListener('offline', () => { SYNC.connected = false; updateSync(); });
+}
+function updateSync() {
+  clearTimeout(SYNC.timer);
+  const n = S.mode === 'firebase' && S.uid ? Object.keys(cache.pending()).length : 0;
+  if (SYNC.connected && !n) renderSync(); else SYNC.timer = setTimeout(renderSync, 1500);
+}
+function renderSync() {
+  const el = $('#sync'); if (!el) return;
+  if (S.mode !== 'firebase' || !S.uid) { el.hidden = true; return; }
+  const n = Object.keys(cache.pending()).length;
+  if (!SYNC.connected) {
+    el.className = 'sync off';
+    el.textContent = n ? `Offline · ${n === 1 ? '1 Änderung wartet' : `${n} Änderungen warten`} auf Internet` : 'Offline · Änderungen bleiben auf diesem Gerät';
+    el.hidden = false;
+  } else if (n) { el.className = 'sync'; el.textContent = 'Wird synchronisiert …'; el.hidden = false; }
+  else el.hidden = true;
+}
+
+const OFFLINE_DAY = 'Dieser Tag ist offline nicht verfügbar. Verbinde dich kurz mit dem Internet.';
 function updateDay(date, fn) {
+  if (S.unknown.has(date)) { toast(OFFLINE_DAY); return Promise.resolve(); }
   const d = clean(getDay(date)); fn(d);
   S.days[date] = normalizeDay(d);
   renderAll();
   return persistDay(date);
 }
 function updateLib(fn) {
+  if (S.libUnknown) { toast('Die Bibliothek ist offline nicht verfügbar. Verbinde dich kurz mit dem Internet.'); return Promise.resolve(); }
   const l = clean(S.lib); fn(l);
   S.lib = normLib(l);
   renderAll(); refreshAddModal();
   return persistLib();
 }
+/* Tag laden, bevor dort etwas eingetragen wird, damit nichts überschrieben wird */
+async function ensureDay(date) {
+  try { await loadDates([date]); } catch (e) { console.error(e); }
+  if (!S.days[date] || S.unknown.has(date)) { toast(OFFLINE_DAY); return false; }
+  return true;
+}
 
-/* Ändert sich ein eigenes Lebensmittel, bekommen auch alle schon eingetragenen Einträge, Favoriten, Zuletzt gegessen und Vorlagen die neuen Werte */
-const FOOD_FIELDS = f => ({ name: f.name, brand: f.brand, per100: f.per100, nova: f.nova, nutri: f.nutri, incomplete: f.incomplete, portion: f.portion });
+/* Ändert sich ein eigenes Lebensmittel oder Rezept, bekommen auch alle schon eingetragenen Einträge, Favoriten, Zuletzt gegessen und Vorlagen die neuen Werte */
+function FOOD_FIELDS(f) {
+  const o = { name: f.name, brand: f.brand, per100: f.per100, nova: f.nova, nutri: f.nutri, incomplete: f.incomplete, portion: f.portion };
+  if (f.source === 'recipe') {
+    o.ingredients = (f.ingredients || []).map(i => ({ name: i.name, source: i.source, code: i.code || '', grams: i.grams }));
+    o.recipeTotal = f.recipeTotal;
+  }
+  return o;
+}
+async function saveOwnFood(food, isEdit) {
+  const same = x => !!x && x.source === food.source && x.id === food.id;
+  await updateLib(l => {
+    const i = l.custom.findIndex(same); if (i >= 0) l.custom[i] = food; else l.custom.push(food);
+    if (!isEdit) return;
+    for (const k of ['favorites', 'recent']) l[k] = l[k].map(x => same(x) ? { ...x, ...FOOD_FIELDS(food) } : x);
+    l.templates = l.templates.map(t => ({ ...t, items: toArr(t.items).map(x => same(x.ref) ? { ...x, ref: { ...x.ref, ...FOOD_FIELDS(food) } } : x) }));
+  });
+  if (isEdit) await propagateFood(food);
+}
 async function propagateFood(food) {
   let all;
   try { all = await store.loadAllDays(); }
@@ -1184,8 +1356,8 @@ async function propagateFood(food) {
   let n = 0;
   for (const date of new Set([...Object.keys(all), ...Object.keys(S.days)])) {
     const day = S.days[date] || all[date];
-    if (!day || !day.items.some(it => it.kind !== 'supp' && it.source === 'custom' && it.refId === food.id)) continue;
-    const items = day.items.map(it => (it.kind !== 'supp' && it.source === 'custom' && it.refId === food.id) ? { ...it, ...FOOD_FIELDS(food) } : it);
+    if (!day || !day.items.some(it => it.kind !== 'supp' && it.source === food.source && it.refId === food.id)) continue;
+    const items = day.items.map(it => (it.kind !== 'supp' && it.source === food.source && it.refId === food.id) ? { ...it, ...FOOD_FIELDS(food) } : it);
     S.days[date] = normalizeDay({ ...day, items });
     n++;
     await persistDay(date);
@@ -1198,7 +1370,11 @@ async function loadDates(dates) {
   const todo = dates.filter(d => !S.days[d]);
   if (!todo.length) return;
   const arr = await store.loadDays(todo);
-  todo.forEach((d, i) => { if (!S.days[d]) S.days[d] = arr[i]; });   // überschreibt keine Änderung, die du währenddessen gemacht hast
+  todo.forEach((d, i) => {   // überschreibt keine Änderung, die du währenddessen gemacht hast
+    if (S.days[d]) return;
+    if (arr[i]) S.days[d] = arr[i];
+    else { S.days[d] = emptyDay(); S.unknown.add(d); }   // offline und nie geladen: nicht bearbeitbar
+  });
 }
 async function loadWeek(force = false) {
   const dates = weekDates(S.monday);
@@ -1206,16 +1382,20 @@ async function loadWeek(force = false) {
   try { await loadDates(dates); }
   catch (e) {
     console.error(e); toast('Die Woche konnte nicht geladen werden. Prüfe deine Verbindung und die Regeln der Realtime Database.');
-    dates.forEach(d => { if (!S.days[d]) S.days[d] = emptyDay(); });
+    dates.forEach(d => { if (!S.days[d]) { S.days[d] = emptyDay(); if (S.mode === 'firebase') S.unknown.add(d); } });
   }
 }
 async function loadAll() {
-  try { const p = await store.loadProfile(); if (p) S.profile = { ...S.profile, ...p }; } catch (e) { console.error(e); }
-  try { S.lib = await store.loadLibrary(); } catch (e) { console.error(e); toast('Die Bibliothek konnte nicht geladen werden.'); }
+  try {
+    const p = await store.loadProfile();
+    if (p) S.profile = { ...S.profile, ...p }; else S.needsSetup = true;   // erster Start: Ersteinrichtung
+  } catch (e) { console.error(e); }
+  try { S.lib = await store.loadLibrary(); S.libUnknown = false; }
+  catch (e) { console.error(e); if (S.mode === 'firebase') S.libUnknown = true; toast('Die Bibliothek konnte nicht geladen werden.'); }
   await loadWeek();
 }
 
-const APP_VERSION = '5.0';
+const APP_VERSION = '5.1';
 
 /* ---------------------------------------------------------------------
    Ziele und abgeleitete Werte
@@ -1257,6 +1437,7 @@ const ICON = {
   pill: '<svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-40 12 12)"><rect x="3" y="8.5" width="18" height="7" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v7" stroke="currentColor" stroke-width="2"/></g></svg>',
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l.8 12h8.4L17 7M10.5 11v5M13.5 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.8" width="10" height="18.4" rx="2.6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
   book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5A2 2 0 0 1 7 3h12v14H7a2 2 0 0 0-2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M5 19a2 2 0 0 0 2 2h12v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
   logo: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--energy)" stroke-width="5" stroke-linecap="round" stroke-dasharray="94 120" transform="rotate(-90 24 24)"/><circle cx="24" cy="24" r="12" fill="none" stroke="var(--protein)" stroke-width="5" stroke-linecap="round" stroke-dasharray="52 76" transform="rotate(-90 24 24)"/><circle cx="24" cy="24" r="5" fill="var(--micro)"/></svg>'
 };
@@ -1272,18 +1453,16 @@ const NOVA_TXT = { 1: 'unverarbeitet', 2: 'verarbeitete Zutat', 3: 'verarbeitet'
 const novaPill = n => n ? `<span class="nova n${n}" title="Nova ${n}: ${NOVA_TXT[n]}">Nova ${n}</span>` : '';
 const nutriPill = g => g ? `<span class="ns ns-${g}" title="Nutri-Score">Nutri ${g.toUpperCase()}</span>` : '';
 const approxMark = on => on ? '<abbr title="Bei manchen Einträgen fehlt diese Angabe. Der echte Wert ist vermutlich höher.">≈</abbr> ' : '';
-/* Woher die Werte kommen: offizielle Laborwerte, von Nutzern abgetippt oder selbst angelegt */
+/* Kennzeichnet selbst angelegte Werte */
 function sourceBadge(food) {
   const s = food.source;
-  if (s === 'usda') return `<span class="badge lab">${ICON.flask}Offizielle Laborwerte</span>`;
-  if (s === 'off') return `<span class="badge user">${ICON.pencil}Von Nutzern abgetippt</span>`;
   if (s === 'custom' || s === 'recipe' || s === 'supp') return `<span class="badge own">${ICON.user}Deine eigenen Werte</span>`;
   return '';
 }
 /* Vorschaubild: Foto von Open Food Facts, sonst Feld mit Anfangsbuchstabe (bleibt auch, wenn das Foto nicht lädt) */
 function thumbHTML(food, size = '') {
   const letter = esc((String(food.name || '?').trim()[0] || '?').toUpperCase());
-  const kind = food.source === 'supp' || food.kind === 'supp' ? 'supp' : food.source === 'usda' ? 'fresh' : '';
+  const kind = food.source === 'supp' || food.kind === 'supp' ? 'supp' : '';
   const img = safeImg(food.img);
   return `<span class="thumb ${size} ${kind}" data-l="${letter}" aria-hidden="true">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</span>`;
 }
@@ -1461,7 +1640,8 @@ function bodyHTML(date, day) {
 }
 function todayHTML() {
   const date = S.selected, day = getDay(date), targets = targetsFor(date), tot = sumItems(day.items);
-  const html = `${dayHeadHTML(date)}${stripHTML()}<div class="cols">
+  const off = S.unknown.has(date) ? '<div class="note">Offline: Dieser Tag war auf diesem Gerät noch nie geladen. Verbinde dich kurz mit dem Internet, dann erscheinen deine Einträge.</div>' : '';
+  const html = `${dayHeadHTML(date)}${stripHTML()}${off}<div class="cols">
     <div class="col">${heroHTML(date, day, tot, targets)}${gapsHTML(date, day, tot, targets)}${mealsHTML(date, day)}${waterHTML(date, day)}</div>
     <div class="col">${nutrientsHTML(tot, targets, day.items)}${bodyHTML(date, day)}</div></div>`;
   return html;
@@ -1677,31 +1857,48 @@ function meHeroHTML() {
       ${goalHTML('var(--nova3)', 'Gesättigt', fmtNum(tg.satfat.value, 1), `g Fett höchstens, ${Math.round(SATFAT_SHARE * 100)} % der Kalorien`)}
     </div></section>`;
 }
-function profileHTML() {
+function profileFormHTML(setup = false) {
   const p = S.profile;
   const opt = (list, cur, key = 'v') => list.map(x => `<option value="${x[key]}" ${String(x[key]) === String(cur) ? 'selected' : ''}>${x.label}</option>`).join('');
-  const installed = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const hd = (icon, c, title, sub) => `<div class="ctitle" style="--c:${c}"><span class="cico">${icon}</span><div class="ct"><h2>${title}</h2>${sub ? `<span class="sub">${sub}</span>` : ''}</div></div>`;
-  return `<div class="cols"><div class="col"><section class="card">${hd(ICON.user, 'var(--micro)', 'Körperdaten', 'Daraus berechnet die App deinen Kalorienbedarf und deine Richtwerte.')}
-    <form data-form="settings" style="margin-top:14px">
+  const req = setup ? 'required' : '';
+  return `<form data-form="settings" style="margin-top:14px">
       <fieldset class="field"><legend>Geschlecht</legend><div class="pills">
         <label class="pill"><input type="radio" name="sex" value="m" ${p.sex !== 'w' ? 'checked' : ''}><span>Männlich</span></label>
         <label class="pill"><input type="radio" name="sex" value="w" ${p.sex === 'w' ? 'checked' : ''}><span>Weiblich</span></label></div></fieldset>
       <div class="pgrid three">
-        <div class="field"><label for="pa">Alter</label><span class="withunit"><input id="pa" name="age" inputmode="numeric" value="${esc(p.age ?? '')}" placeholder="19"><em>Jahre</em></span></div>
-        <div class="field"><label for="ph">Größe</label><span class="withunit"><input id="ph" name="height" inputmode="numeric" value="${esc(p.height ?? '')}" placeholder="180"><em>cm</em></span></div>
-        <div class="field"><label for="pw">Gewicht</label><span class="withunit"><input id="pw" name="weight" inputmode="decimal" value="${esc(fmtNum(p.weight, 1))}" required><em>kg</em></span></div>
+        <div class="field"><label for="pa">Alter</label><span class="withunit"><input id="pa" name="age" inputmode="numeric" value="${esc(p.age ?? '')}" placeholder="19" ${req}><em>Jahre</em></span></div>
+        <div class="field"><label for="ph">Größe</label><span class="withunit"><input id="ph" name="height" inputmode="numeric" value="${esc(p.height ?? '')}" placeholder="180" ${req}><em>cm</em></span></div>
+        <div class="field"><label for="pw">Gewicht</label><span class="withunit"><input id="pw" name="weight" inputmode="decimal" value="${setup ? '' : esc(inputNum(p.weight))}" placeholder="75" required><em>kg</em></span></div>
       </div>
       <div class="field"><label for="pact">Alltag ohne Sport</label><select id="pact" name="activity">${opt(ACTIVITY, p.activity)}</select></div>
       <div class="field"><label for="pgoal">Ziel</label><select id="pgoal" name="goal">${opt(GOALS, p.goal || 'keep', 'id')}</select></div>
       <div class="field"><label for="pprot">Eiweiß</label><select id="pprot" name="proteinPerKg">${opt(PROTEIN_LEVELS, p.proteinPerKg || 0.8)}</select></div>
-      <button class="btn primary wide" type="submit">Speichern</button>
-    </form>
+      <button class="btn primary wide" type="submit">${setup ? 'Los geht’s' : 'Speichern'}</button>
+    </form>`;
+}
+const THEMES = [['auto', 'Automatisch'], ['light', 'Hell'], ['dark', 'Dunkel']];
+function profileHTML() {
+  const installed = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const hd = (icon, c, title, sub) => `<div class="ctitle" style="--c:${c}"><span class="cico">${icon}</span><div class="ct"><h2>${title}</h2>${sub ? `<span class="sub">${sub}</span>` : ''}</div></div>`;
+  return `<div class="cols"><div class="col"><section class="card">${hd(ICON.user, 'var(--micro)', 'Körperdaten', 'Daraus berechnet die App deinen Kalorienbedarf und deine Richtwerte.')}
+    ${profileFormHTML()}
     <p class="foot">Der Bedarf ist eine Schätzung (Mifflin-St Jeor) und kein medizinischer Rat. Hast du an einem Tag dein Gewicht eingetragen, nutzt die App das neueste davon.</p></section></div>
-    <div class="col"><section class="card">${hd(ICON.phone, 'var(--protein)', 'Als App aufs iPhone', '')}
+    <div class="col"><section class="card">${hd(ICON.moon, 'var(--nova3)', 'Darstellung', 'Automatisch folgt der Einstellung deines Geräts.')}
+      <div class="seg me-seg" role="group" aria-label="Darstellung" style="margin-top:12px">${THEMES.map(([v, l]) => `<button data-action="theme" data-v="${v}" aria-pressed="${S.theme === v}">${l}</button>`).join('')}</div></section>
+    <section class="card">${hd(ICON.phone, 'var(--protein)', 'Als App aufs iPhone', '')}
       ${installed ? `<p class="done">${ICON.check}<span>Läuft schon als App.</span></p>` : `<ol class="steps"><li><span>Öffne diese Seite in Safari.</span></li><li><span>Tippe unten auf das Teilen-Symbol (Quadrat mit Pfeil).</span></li><li><span>Wähle „Zum Home-Bildschirm“.</span></li></ol>
       <p class="foot">Danach startet sie wie eine App, ohne Browserleiste. In der App musst du dich einmal neu anmelden.</p>`}</section>
-    ${S.mode === 'firebase' ? `<section class="card"><div class="acct"><span class="avatar">${ICON.user}</span><div class="who"><b>${esc(S.user && S.user.email || '')}</b><span class="muted">Deine Daten liegen in deiner Firebase-Datenbank.</span></div></div><button class="btn wide" style="margin-top:14px" data-action="logout">Abmelden</button></section>` : ''}</div></div>`;
+    ${S.mode === 'firebase' ? `<section class="card"><div class="acct"><span class="avatar">${ICON.user}</span><div class="who"><b>${esc(S.user && S.user.email || '')}</b><span class="muted">Deine Daten liegen in deiner Firebase-Datenbank und als Kopie auf diesem Gerät, damit die App auch offline läuft.</span></div></div><button class="btn wide" style="margin-top:14px" data-action="logout">Abmelden</button></section>` : ''}</div></div>`;
+}
+function applyTheme(v) {
+  S.theme = v === 'light' || v === 'dark' ? v : 'auto';
+  try { if (S.theme === 'auto') localStorage.removeItem('np:theme'); else localStorage.setItem('np:theme', S.theme); } catch { /* egal */ }
+  const root = document.documentElement;
+  if (S.theme === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', S.theme);
+  $$('meta[name="theme-color"]').forEach(m => {
+    const dark = S.theme === 'auto' ? (m.getAttribute('media') || '').includes('dark') : S.theme === 'dark';
+    m.setAttribute('content', dark ? '#0C131B' : '#F2F4EF');
+  });
 }
 function moreHTML() {
   return `<div class="weekbar"><div class="t"><b>Mehr</b><span>Bibliothek und Profil · Version ${APP_VERSION}</span></div></div>
@@ -1732,17 +1929,33 @@ function authHTML() {
     <h1>${login ? 'Willkommen zurück' : 'Konto erstellen'}</h1>
     <p>${login ? 'Melde dich an, um deinen Plan zu sehen.' : 'Mit einem Konto ist dein Plan auf PC und iPhone gleich.'}</p>
     ${S.authError ? `<p class="error" role="alert">${esc(S.authError)}</p>` : ''}
+    ${S.authInfo ? `<p class="done" role="status">${ICON.check}<span>${esc(S.authInfo)}</span></p>` : ''}
     <form data-form="auth">
-      <div class="field"><label for="em">E-Mail</label><input id="em" name="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="em">E-Mail</label><input id="em" name="email" type="email" autocomplete="email" value="${esc(S.authEmail)}" required></div>
       <div class="field"><label for="pwd">Passwort</label><input id="pwd" name="password" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" minlength="6" required></div>
       <button class="btn primary" type="submit">${login ? 'Anmelden' : 'Konto erstellen'}</button>
     </form>
-    <button class="link" style="margin-top:16px" data-action="auth-toggle">${login ? 'Noch kein Konto? Konto erstellen' : 'Schon ein Konto? Anmelden'}</button></main>`;
+    <div class="authlinks">${login ? '<button class="link" data-action="auth-reset">Passwort vergessen?</button>' : ''}
+      <button class="link" data-action="auth-toggle">${login ? 'Noch kein Konto? Konto erstellen' : 'Schon ein Konto? Anmelden'}</button></div></main>`;
+}
+function setupHTML() {
+  return `<main class="auth setup"><div class="brand">${ICON.logo}<span>Nährstoff-Planer</span></div>
+    <h1>Kurz zu dir</h1>
+    <p>Daraus berechnet die App deinen Kalorienbedarf, dein Eiweißziel und die Richtwerte für Vitamine und Mineralstoffe. Ändern kannst du das jederzeit unter Mehr, Profil.</p>
+    ${profileFormHTML(true)}
+    <p class="foot">Der Bedarf ist eine Schätzung (Mifflin-St Jeor) und kein medizinischer Rat.</p></main>`;
+}
+function fatalHTML() {
+  return `<main class="auth"><div class="brand">${ICON.logo}<span>Nährstoff-Planer</span></div>
+    <h1>Keine Verbindung</h1><p>${esc(S.fatal)}</p>
+    <button class="btn primary" data-action="reload">Erneut versuchen</button></main>`;
 }
 function renderAll() {
   const root = $('#app');
   if (S.booting) { root.innerHTML = `<div class="boot" aria-label="Lädt">${ICON.logo}</div>`; return; }
+  if (S.fatal) { root.innerHTML = fatalHTML(); return; }
   if (S.mode === 'firebase' && !S.user) { root.innerHTML = authHTML(); return; }
+  if (S.needsSetup) { root.innerHTML = setupHTML(); return; }
   const y = window.scrollY;
   root.innerHTML = shellHTML();
   window.scrollTo(0, y);
@@ -1800,11 +2013,10 @@ function resRowHTML(it, i) {
     chips = `<span class="chip">pro ${esc(it.unit || 'Stk')}</span>` + ks.map(k => `<span class="chip">${labelOf(k)} ${fmtNum(it.perUnit[k], decOf(k))} ${unitOf(k)}</span>`).join('');
   } else {
     const p = it.per100 || {}, micro = MICRO_KEYS.filter(k => p[k] != null).length;
-    const src = '';
-    chips = `${src}<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span>${it.source === 'recipe' ? '<span class="chip">Rezept</span>' : ''}${it.source === 'custom' ? '<span class="chip">Eigenes</span>' : ''}${novaPill(it.nova)}${nutriPill(it.nutri)}<span class="chip" title="So viele der ${MICRO_KEYS.length} Vitamine und Mineralstoffe stehen in den Daten">${micro}/${MICRO_KEYS.length} Mikros</span>`;
+    chips = `<span class="chip">${fmtNum(p.kcal)} kcal</span><span class="chip">${fmtNum(p.protein, 1)} g Eiweiß</span>${it.source === 'recipe' ? '<span class="chip">Rezept</span>' : ''}${it.source === 'custom' ? '<span class="chip">Eigenes</span>' : ''}${novaPill(it.nova)}${nutriPill(it.nutri)}<span class="chip" title="So viele der ${MICRO_KEYS.length} Vitamine und Mineralstoffe stehen in den Daten">${micro}/${MICRO_KEYS.length} Mikros</span>`;
   }
   const fav = isFavRef(it);
-  const sub = it.nameEn ? `<span class="ibrand">${esc(it.nameEn)}</span>` : (it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : '');
+  const sub = it.brand ? `<span class="ibrand">${esc(it.brand)}</span>` : '';
   return `<li class="res ${picked ? 'picked' : ''}" data-action="pick" data-idx="${i}">${thumbHTML(it, 'md')}<div class="iname">${sourceBadge(it)}<strong>${esc(it.name)}</strong>${sub}<div class="chips">${chips}</div></div>
     <div class="resact"><button class="x star" data-action="fav-toggle" data-idx="${i}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten hinzufügen'}">${fav ? ICON.starOn : ICON.star}</button>
       <button class="icon-btn sm ${picked ? 'accent' : ''}" data-action="pick" data-idx="${i}" aria-label="${esc(it.name)} auswählen" aria-pressed="${picked}">${picked ? ICON.checkSm : ICON.plus}</button></div>${picked ? detailBlock(it) : ''}</li>`;
@@ -1938,16 +2150,19 @@ function openEditItem(date, id) {
   $('#modal-root').innerHTML = modalShell(esc(it.name), [it.brand, dateLabel(date)].filter(Boolean).join(' · '), `
     ${photo}${mini}${contrib.length ? `<p class="secttl" style="margin-top:4px">Steuert am meisten bei</p><ul class="contrib">${contrib.map(c => `<li><span>${labelOf(c.k)}</span><b>${pctTxt(c.p)} vom Tagesziel</b></li>`).join('')}</ul>` : ''}
     <form data-form="edit-item">
-      <div class="pgrid"><div class="field"><label for="eq">Menge (${supp ? esc(it.unit) : 'g'})</label><input id="eq" name="qty" inputmode="decimal" value="${esc(fmtNum(supp ? it.qty : it.grams, 1))}" required></div>
+      <div class="pgrid"><div class="field"><label for="eq">Menge (${supp ? esc(it.unit) : 'g'})</label><input id="eq" name="qty" inputmode="decimal" value="${esc(inputNum(supp ? it.qty : it.grams))}" required></div>
       ${supp ? '' : `<div class="field"><label for="em2">Mahlzeit</label><select id="em2" name="meal">${MEALS.filter(x => x.id !== 'erg').map(x => `<option value="${x.id}" ${x.id === it.meal ? 'selected' : ''}>${x.label}</option>`).join('')}</select></div>`}
-      <div class="field"><label for="et">Uhrzeit</label><input id="et" name="time" type="time" value="${esc(it.time)}"></div></div>
+      <div class="field"><label for="et">Uhrzeit</label><input id="et" name="time" type="time" value="${esc(it.time)}"></div>
+      <div class="field"><label for="ed">Tag</label><input id="ed" name="date" type="date" value="${date}" required></div></div>
+      <p class="hint">Änderst du den Tag, wird der Eintrag dorthin verschoben. „Als Kopie“ trägt ihn dort zusätzlich ein.</p>
       <div class="sheet-actions"><button class="btn primary" type="submit">Speichern</button>
+        <button class="btn" type="button" data-action="item-copy">Als Kopie</button>
         <button class="btn" type="button" data-action="fav-item" data-date="${date}" data-id="${esc(it.id)}" aria-pressed="${fav}">${fav ? ICON.starOn + ' Favorit' : ICON.star + ' Als Favorit'}</button>
         <button class="btn danger" type="button" data-action="remove" data-date="${date}" data-id="${esc(it.id)}">Löschen</button></div>
     </form>`);
 }
 
-/* Dialoge: eigene Lebensmittel, Ergänzungen, Rezepte (unverändert übernommen) */
+/* Dialoge: eigene Lebensmittel, Ergänzungen, Rezepte */
 function valueFieldsHTML(vals, mode) {
   const basis = ['kcal', 'protein', 'fat', 'carbs', 'sugar', 'fiber', 'salt'];
   const groups = [
@@ -1965,6 +2180,18 @@ function valueFieldsHTML(vals, mode) {
     const open = gi === 0 || keys.some(k => vals && vals[k] != null);
     return `<details class="fd" ${open ? 'open' : ''}><summary>${title}</summary><div class="fgrid">${keys.map(input).join('')}</div></details>`;
   }).join('');
+}
+/* Formular „Eintrag bearbeiten“ lesen; bei Fehlern Meldung im Formular und null */
+function readEditForm(f, it, fallbackDate) {
+  const data = Object.fromEntries(new FormData(f));
+  const supp = it.kind === 'supp', q = parseDecimal(data.qty);
+  if (!validQty(q, supp ? 50 : 5000)) { showFormError(f, supp ? 'Gib eine Menge zwischen 0,5 und 50 ein.' : 'Gib eine Menge zwischen 1 und 5000 Gramm ein.'); return null; }
+  return {
+    qty: supp ? q : Math.round(q),
+    time: /^\d\d:\d\d$/.test(data.time || '') ? data.time : '',
+    meal: supp ? 'erg' : (MEALS.some(x => x.id === data.meal) ? data.meal : it.meal),
+    to: /^\d{4}-\d\d-\d\d$/.test(data.date || '') ? data.date : fallbackDate
+  };
 }
 function readValueFields(data) {
   const f = {}; for (const k of ALL_KEYS) f[k] = data['v_' + k];
@@ -2026,7 +2253,7 @@ function openRecipeEditor(arg) {
       <div class="field"><label for="rn">Name</label><input id="rn" name="name" type="text" value="${esc(d.name)}" required maxlength="120"></div>
       <h3 style="font-size:.95rem;margin:6px 0">Zutaten</h3>
       <div id="ings">${rows || '<p class="hint">Noch keine Zutaten.</p>'}</div>
-      <p style="margin:8px 0"><button class="btn ghost small" type="button" data-action="ing-add">Zutat hinzufügen</button></p>
+      <p style="margin:8px 0"><button class="btn small" type="button" data-action="ing-add">Zutat hinzufügen</button></p>
       <div class="fgrid"><div class="field"><label for="rt">Fertiges Gewicht in g (optional)</label><input id="rt" name="total" type="text" inputmode="decimal" value="${esc(d.total)}" placeholder="Summe der Zutaten"></div>
         <div class="field"><label for="rp">Portionen (optional)</label><input id="rp" name="portions" type="text" inputmode="decimal" value="${esc(d.portions)}"></div></div>
       <p class="hint">Das fertige Gewicht ist wichtig, wenn beim Kochen Wasser verdampft. Wiege dazu das fertige Gericht.</p>
@@ -2057,7 +2284,7 @@ function authMsg(code) {
     'auth/user-not-found': 'E-Mail oder Passwort stimmt nicht.', 'auth/email-already-in-use': 'Zu dieser E-Mail gibt es schon ein Konto. Melde dich an.',
     'auth/weak-password': 'Das Passwort braucht mindestens 6 Zeichen.', 'auth/invalid-email': 'Diese E-Mail-Adresse ist ungültig.',
     'auth/too-many-requests': 'Zu viele Versuche. Warte kurz und probier es dann noch einmal.',
-    'auth/network-request-failed': 'Keine Verbindung. Prüf dein Internet.',
+    'auth/network-request-failed': 'Keine Verbindung. Prüf dein Internet.', 'auth/missing-email': 'Gib deine E-Mail ein.',
     'auth/invalid-api-key': 'Der API-Schlüssel in der Datei stimmt nicht.', 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'Der API-Schlüssel in der Datei stimmt nicht.',
     'auth/unauthorized-domain': 'Diese Adresse ist in Firebase nicht freigegeben (Authentication → Einstellungen → Autorisierte Domains).'
   };
@@ -2176,14 +2403,47 @@ document.addEventListener('click', async e => {
     case 'edit-item': openEditItem(el.dataset.date, el.dataset.id); break;
     case 'remove': {
       const { date, id } = el.dataset;
+      const removed = getDay(date).items.find(x => x.id === id); if (!removed) break;
       if (S.modal && S.modal.type === 'edit') closeModal();
-      await updateDay(date, d => { d.items = d.items.filter(x => x.id !== id); }); toast('Gelöscht.'); break;
+      await updateDay(date, d => { d.items = d.items.filter(x => x.id !== id); });
+      toast(`${removed.name} gelöscht.`, { label: 'Rückgängig', fn: () => updateDay(date, d => { if (!d.items.some(x => x.id === id)) d.items.push(removed); }) });
+      break;
+    }
+    case 'item-copy': {
+      const m = S.modal; if (!m || m.type !== 'edit') break;
+      const it = getDay(m.date).items.find(x => x.id === m.id); if (!it) break;
+      const v = readEditForm(el.closest('form'), it, m.date); if (!v) break;
+      if (!(await ensureDay(v.to))) break;
+      closeModal();
+      const copy = makeItem(toFoodRef(it), v.qty, v.meal, v.time);
+      await updateDay(v.to, d => { d.items.push(copy); });
+      toast(`Kopie am ${dateLabel(v.to)} eingetragen.`);
+      break;
+    }
+    case 'toast-act': { const fn = toastFn; hideToast(); if (fn) await fn(); break; }
+    case 'theme': applyTheme(el.dataset.v); renderAll(); break;
+    case 'reload': location.reload(); break;
+    case 'auth-reset': {
+      const email = (($('#em') && $('#em').value) || '').trim();
+      S.authEmail = email; S.authError = ''; S.authInfo = '';
+      if (!email) { S.authError = 'Gib oben deine E-Mail ein. Dann schicken wir dir einen Link zum Zurücksetzen.'; renderAll(); if ($('#em')) $('#em').focus(); break; }
+      try {
+        await fb.authM.sendPasswordResetEmail(fb.auth, email);
+        S.authInfo = `Falls es zu ${email} ein Konto gibt, ist jetzt eine E-Mail mit einem Link unterwegs. Schau auch im Spam-Ordner nach.`;
+      } catch (err) { S.authError = authMsg(err.code); }
+      renderAll(); break;
     }
     case 'water': {
       const ml = Number(el.dataset.ml);
       await updateDay(el.dataset.date, d => { d.water = Math.max(0, (Number(d.water) || 0) + ml); }); break;
     }
-    case 'sport-remove': { const { date, id } = el.dataset; await updateDay(date, d => { d.sport = d.sport.filter(s => s.id !== id); }); break; }
+    case 'sport-remove': {
+      const { date, id } = el.dataset;
+      const removed = getDay(date).sport.find(s => s.id === id); if (!removed) break;
+      await updateDay(date, d => { d.sport = d.sport.filter(s => s.id !== id); });
+      toast(`${removed.name} gelöscht.`, { label: 'Rückgängig', fn: () => updateDay(date, d => { if (!d.sport.some(s => s.id === id)) d.sport.push(removed); }) });
+      break;
+    }
     case 'prev-week': changeWeek(addDays(S.monday, -7)); break;
     case 'next-week': changeWeek(addDays(S.monday, 7)); break;
     case 'hist-range': S.hist.range = Number(el.dataset.range); ensureHistory(); break;
@@ -2199,12 +2459,14 @@ document.addEventListener('click', async e => {
       const { kind, id } = el.dataset;
       const pool0 = kind === 'supp' ? S.lib.supplements : kind === 'tpl' ? S.lib.templates : S.lib.custom;
       const it = pool0.find(x => x.id === id); if (!it) break;
-      if (!window.confirm(`„${it.name}“ löschen? Bereits eingetragene Mahlzeiten bleiben unverändert.`)) break;
-      const key = foodKey(it);
-      await updateLib(l => {
-        l.custom = l.custom.filter(x => x.id !== id); l.supplements = l.supplements.filter(x => x.id !== id); l.templates = l.templates.filter(x => x.id !== id);
-        if (kind !== 'tpl') { l.favorites = l.favorites.filter(f => foodKey(f) !== key); l.recent = l.recent.filter(f => foodKey(f) !== key); }
-      });
+      const key = foodKey(it), byId = x => x.id === id, byKey = f => foodKey(f) === key;
+      const match = { custom: byId, supplements: byId, templates: byId, ...(kind !== 'tpl' ? { favorites: byKey, recent: byKey } : {}) };
+      const removed = [];   // [Liste, Position, Eintrag], damit „Rückgängig“ alles an seinen alten Platz legt
+      for (const [k, fn] of Object.entries(match)) S.lib[k].forEach((x, i) => { if (fn(x)) removed.push([k, i, clean(x)]); });
+      await updateLib(l => { for (const [k, fn] of Object.entries(match)) l[k] = l[k].filter(x => !fn(x)); });
+      toast(`„${it.name}“ gelöscht. Eingetragene Mahlzeiten bleiben.`, { label: 'Rückgängig', fn: () => updateLib(l => {
+        for (const [k, i, x] of removed) if (!l[k].some(match[k])) l[k].splice(Math.min(i, l[k].length), 0, x);
+      }) });
       break;
     }
     case 'ing-add': {
@@ -2216,7 +2478,7 @@ document.addEventListener('click', async e => {
       break;
     }
     case 'ing-remove': { syncDraft(); S.draft.ingredients.splice(Number(el.dataset.idx), 1); openRecipeEditor(S.draft); break; }
-    case 'auth-toggle': S.authMode = S.authMode === 'login' ? 'signup' : 'login'; S.authError = ''; renderAll(); break;
+    case 'auth-toggle': S.authEmail = (($('#em') && $('#em').value) || '').trim(); S.authMode = S.authMode === 'login' ? 'signup' : 'login'; S.authError = ''; S.authInfo = ''; renderAll(); break;
     case 'logout': try { await fb.authM.signOut(fb.auth); } catch (err) { console.error(err); } break;
   }
 });
@@ -2233,11 +2495,14 @@ document.addEventListener('submit', async e => {
     if (Number.isNaN(h) || (h !== null && !(h >= 120 && h <= 230))) { showFormError(f, 'Gib eine Größe zwischen 120 und 230 cm ein, oder lass das Feld leer.'); return; }
     S.profile = { sex: data.sex === 'w' ? 'w' : 'm', weight: Math.round(w * 10) / 10, age: age === null ? null : Math.round(age), height: height0(h),
       activity: Number(data.activity) || 1.3, goal: GOALS.some(g => g.id === data.goal) ? data.goal : 'keep', proteinPerKg: Number(data.proteinPerKg) || 0.8 };
-    renderAll(); toast('Profil gespeichert.');
-    try { await store.saveProfile(S.profile); } catch (err) { console.error(err); toast('Das Profil konnte nicht gespeichert werden.'); }
+    const first = S.needsSetup;
+    S.needsSetup = false;
+    if (first) { S.animate = true; window.scrollTo(0, 0); }
+    renderAll(); toast(first ? 'Fertig eingerichtet. Trag jetzt dein erstes Essen ein.' : 'Profil gespeichert.');
+    persistProfile();
   } else if (kind === 'auth') {
     try {
-      S.authError = '';
+      S.authError = ''; S.authInfo = ''; S.authEmail = String(data.email || '').trim();
       if (S.authMode === 'login') await fb.authM.signInWithEmailAndPassword(fb.auth, data.email, data.password);
       else await fb.authM.createUserWithEmailAndPassword(fb.auth, data.email, data.password);
     } catch (err) { S.authError = authMsg(err.code); renderAll(); }
@@ -2253,13 +2518,18 @@ document.addEventListener('submit', async e => {
   } else if (kind === 'edit-item') {
     const m = S.modal; if (!m || m.type !== 'edit') return;
     const it = getDay(m.date).items.find(x => x.id === m.id); if (!it) { closeModal(); return; }
-    const supp = it.kind === 'supp', q = parseDecimal(data.qty);
-    if (!validQty(q, supp ? 50 : 5000)) { showFormError(f, supp ? 'Gib eine Menge zwischen 0,5 und 50 ein.' : 'Gib eine Menge zwischen 1 und 5000 Gramm ein.'); return; }
-    const time = /^\d\d:\d\d$/.test(data.time || '') ? data.time : '';
-    const meal = supp ? 'erg' : (MEALS.some(x => x.id === data.meal) ? data.meal : it.meal);
-    const date = m.date, id = m.id;
+    const v = readEditForm(f, it, m.date); if (!v) return;
+    const date = m.date, id = m.id, supp = it.kind === 'supp';
+    if (v.to !== date && !(await ensureDay(v.to))) return;
     closeModal();
-    await updateDay(date, d => { const x = d.items.find(y => y.id === id); if (x) { if (supp) x.qty = q; else x.grams = Math.round(q); x.meal = meal; x.time = time; } });
+    if (v.to === date) {
+      await updateDay(date, d => { const x = d.items.find(y => y.id === id); if (x) { if (supp) x.qty = v.qty; else x.grams = v.qty; x.meal = v.meal; x.time = v.time; } });
+      return;
+    }
+    const moved = { ...clean(it), meal: v.meal, time: v.time, [supp ? 'qty' : 'grams']: v.qty };
+    await updateDay(date, d => { d.items = d.items.filter(y => y.id !== id); });
+    await updateDay(v.to, d => { d.items.push(moved); });
+    toast(`Auf ${dateLabel(v.to)} verschoben.`);
   } else if (kind === 'tpl-save') {
     const m = S.modal; if (!m || m.type !== 'meal-menu') return;
     const name = String(data.name || '').trim(); if (!name) return;
@@ -2279,14 +2549,7 @@ document.addEventListener('submit', async e => {
     const nova = Number(data.nova) >= 1 && Number(data.nova) <= 4 ? Number(data.nova) : null;
     const food = { id: data.id || uid(), source: 'custom', name, brand: String(data.brand || '').trim(), code: '', per100: per, nova, nutri: null, incomplete: [], portion: portion ? Math.round(portion) : null };
     closeModal();
-    const isEdit = !!data.id;
-    await updateLib(l => {
-      const i = l.custom.findIndex(x => x.id === food.id); if (i >= 0) l.custom[i] = food; else l.custom.push(food);
-      if (!isEdit) return;
-      for (const k of ['favorites', 'recent']) l[k] = l[k].map(x => x.source === 'custom' && x.id === food.id ? { ...x, ...FOOD_FIELDS(food) } : x);
-      l.templates = l.templates.map(t => ({ ...t, items: toArr(t.items).map(x => x.ref && x.ref.source === 'custom' && x.ref.id === food.id ? { ...x, ref: { ...x.ref, ...FOOD_FIELDS(food) } } : x) }));
-    });
-    if (isEdit) await propagateFood(food);
+    await saveOwnFood(food, !!data.id);
   } else if (kind === 'supp-editor') {
     const name = String(data.name || '').trim(), unit = String(data.unit || '').trim();
     if (!name || !unit) { showFormError(f, 'Gib Name und Einheit ein.'); return; }
@@ -2311,8 +2574,9 @@ document.addEventListener('submit', async e => {
       incomplete: calc.incomplete, ingredients: d.ingredients, recipeTotal: calc.total,
       portions: portions ? Math.round(portions) : null, portion: portions ? Math.round(calc.total / portions) : null
     };
+    const isEdit = !!d.id;
     S.draft = null; closeModal();
-    await updateLib(l => { const i = l.custom.findIndex(x => x.id === food.id); if (i >= 0) l.custom[i] = food; else l.custom.push(food); });
+    await saveOwnFood(food, isEdit);
   }
 });
 function height0(h) { return h === null ? null : Math.round(h); }
@@ -2321,7 +2585,11 @@ document.addEventListener('change', async e => {
   const t = e.target;
   if (t.matches('input[data-shop]')) {
     const k = shopKey(fmtDate(S.monday), t.dataset.shop), on = t.checked;
-    await updateLib(l => { if (on) l.shopChecked[k] = true; else delete l.shopChecked[k]; });
+    const oldest = fmtDate(addDays(mondayOf(new Date()), -56));   // Haken älter als 8 Wochen fliegen raus
+    await updateLib(l => {
+      for (const x of Object.keys(l.shopChecked)) if (x.split('|')[0] < oldest) delete l.shopChecked[x];
+      if (on) l.shopChecked[k] = true; else delete l.shopChecked[k];
+    });
   } else if (t.matches('input[data-shopopt]')) { S.shopFromToday = t.checked; renderAll(); }
   else if (t.matches('select[data-hist]')) { S.hist.metric = t.value; renderAll(); }
   else if (t.id === 'pmeal' && S.modal && S.modal.type === 'add') {
@@ -2372,7 +2640,14 @@ async function afterLoad() {
   try { await loadDates([...histDates(28), shiftDate(S.selected, -1)]); } catch (e) { console.error(e); }
   renderAll();
 }
+/* Service Worker: App, Icon, Schrift und Firebase-Bibliotheken liegen auf dem Gerät, damit die App offline startet */
+function registerSW() {
+  if (!('serviceWorker' in navigator) || !(location.protocol === 'https:' || location.hostname === 'localhost')) return;
+  navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service Worker:', e));
+}
 async function boot() {
+  applyTheme(S.theme);
+  registerSW();
   renderAll();
   if (!FIREBASE_READY && FIREBASE_CONFIG.apiKey && !String(FIREBASE_CONFIG.apiKey).startsWith('DEIN')) {
     S.initError = `Die Firebase-Daten sind noch nicht vollständig. Es fehlt: ${FIREBASE_MISSING.join(', ')}. Bis dahin läufst du im Testmodus.`;
@@ -2381,16 +2656,24 @@ async function boot() {
     try {
       await initFirebase();
       store = fbStore; S.mode = 'firebase';
+      watchConnection();
       fb.authM.onAuthStateChanged(fb.auth, async u => {
-        S.user = u; S.uid = u ? u.uid : null; S.days = {}; S.lib = emptyLib();
-        if (u) { await loadAll(); await afterLoad(); }
+        S.user = u; S.uid = u ? u.uid : null; S.days = {}; S.lib = emptyLib(); S.profile = defaultProfile();
+        S.unknown = new Set(); S.libUnknown = false; S.needsSetup = false; S.staleLoad = false;
+        if (u) { pruneCache(); await loadAll(); await afterLoad(); flushPending(); }
         else { S.booting = false; renderAll(); }
+        updateSync();
       });
       return;
     } catch (e) {
+      /* Nicht still in den Testmodus wechseln: sonst landen Einträge in einem zweiten, getrennten Speicher */
       console.error(e);
-      S.initError = 'Firebase konnte nicht geladen werden. Du bist im Testmodus, die Daten bleiben nur in diesem Browser.';
-      S.mode = 'local'; store = localStore;
+      S.booting = false;
+      S.fatal = navigator.onLine === false
+        ? 'Du bist offline, und die App wurde auf diesem Gerät noch nie mit Internet geöffnet. Öffne sie einmal online, danach startet sie auch ohne Verbindung.'
+        : 'Firebase konnte nicht geladen werden. Prüf deine Verbindung und versuch es noch einmal.';
+      renderAll();
+      return;
     }
   }
   await loadAll(); await afterLoad();
